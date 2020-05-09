@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "outDir": "build/main",
+    "rootDir": "src",
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "declaration": true,
+    "inlineSourceMap": true,
+    "esModuleInterop": true,
+
+    // "strict": true,
+    // Strict Type-Checking Options
+    // "noImplicitAny": true,
+    // "strictNullChecks": true,
+    // "strictFunctionTypes": true,
+    // "strictPropertyInitialization": true,
+    // "noImplicitThis": true,
+    // "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Debugging Options
+    "traceResolution": false,
+    "listEmittedFiles": false,
+    "listFiles": false,
+    "pretty": true,
+
+    //* Experimental
+    // "experimentalDecorators": true,
+    // "emitDecoratorMetadata": true,
+
+    "lib": ["es2017"],
+    "types": ["node"],
+    "typeRoots": ["node_modules/@types", "src/types"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules/**"],
+  "compileOnSave": false
+}
