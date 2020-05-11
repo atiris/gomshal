@@ -1,4 +1,3 @@
 export function loginToGoogleMap(): JSON {
-  console.log('Login to Google map');
-  return JSON.parse('{location: true}');
+  return JSON.parse('{"location": true}');
 }

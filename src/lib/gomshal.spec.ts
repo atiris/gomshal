@@ -3,5 +3,5 @@ import test from 'ava';
 import { loginToGoogleMap } from './gomshal';
 
 test('loginToGoogleMap return json', t => {
-  t.is(loginToGoogleMap, JSON.parse('{location: true}'));
+  t.deepEqual(loginToGoogleMap(), JSON.parse('{"location": true}'));
 });
