@@ -4,7 +4,11 @@ Extracts Shared locations from Google Maps to json object (replacement for offic
 
 ## Development
 
-Clone `git clone https://github.com/atiris/gomshal.git`, `cd gomshal` and run `npm install --ignore-scripts=false`.
+Clone `git clone https://github.com/atiris/gomshal.git`, `cd gomshal` and run `npm install`.
+
+### Npm ignore scripts flag
+
+If you have set `npm config get ignore-scripts` to true, you will not be able to use npm run commands even you specify `--ignore-scripts=false`. This is because npm-run-all is used when running commands and this tool not forward npm ignore-scripts flag. You can disable ignore scripts with `npm config set ignore-scripts false`. If you want to only install after repository clone, you can call ignore script only temporary for that install with `npm install --ignore-scripts=false`.
 
 ### Windows
 
@@ -14,7 +18,7 @@ Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` in powershell console (a
 
 Since 2020 Google Maps require javascript to open. So we need full browser support for log in. For that reason Puppeteer is used.
 
-Instalation: `npm i puppeteer --save --ignore-scripts=false`
+Instalation: `npm i puppeteer --save`
 
 ## Notes
 
