@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
-    "target": "es2017",
+    "target": "ES2017",
     "outDir": "build/main",
     "rootDir": "src",
     "moduleResolution": "node",
     "module": "commonjs",
-    "declaration": true,
+    "declaration": true, // generate .d.ts files (declaration files) which contain types of the code
+    "skipLibCheck": true, // because of errors from puppeteer index.d.ts
     "inlineSourceMap": true,
     "esModuleInterop": true,
 
@@ -32,7 +33,7 @@
     // "experimentalDecorators": true,
     // "emitDecoratorMetadata": true,
 
-    "lib": ["es2017"],
+    "lib": ["ES2017"],
     "typeRoots": ["node_modules/@types", "src/types"]
   },
   "include": ["src/**/*.ts"],

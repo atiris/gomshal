@@ -3,7 +3,8 @@
   "compilerOptions": {
     "target": "ESNext",
     "outDir": "build/module",
-    "module": "ESNext"
+    "module": "ESNext",
+    "skipLibCheck": true,
   },
   "exclude": [
     "node_modules/**"
