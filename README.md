@@ -2,9 +2,17 @@
 
 Extracts Shared locations from Google Maps to json object (replacement for official missing api for shared location) as node.js library. As this is not an official api, it requires to log in to a google account with a username and password.
 
+## Usage
+
+`npm install gomshal --save`
+
 ## Development
 
 Clone `git clone https://github.com/atiris/gomshal.git`, `cd gomshal` and run `npm install`.
+
+### Git
+
+To remember github credentials type `git config credential.helper store`.
 
 ### Npm ignore scripts flag
 
@@ -19,6 +27,16 @@ Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` in powershell console (a
 Since 2020 Google Maps require javascript to open. So we need full browser support for log in. For that reason Puppeteer is used.
 
 Instalation: `npm i puppeteer --save`
+
+## Publishing
+
+### Npm
+
+Build: `tsc` and then run for:
+Initial library publishing `npm publish`
+Bugfix or patch: `npm version patch`
+New features: `npm version minor`
+Breaking changes: `npm version major`
 
 ## Notes
 
