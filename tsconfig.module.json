@@ -1,12 +1,8 @@
 {
-  "extends": "./tsconfig",
+  "extends": "./tsconfig.lib",
   "compilerOptions": {
     "target": "ESNext",
-    "outDir": "build/module",
+    "outDir": "./build/module",
     "module": "ESNext",
-    "skipLibCheck": true,
   },
-  "exclude": [
-    "node_modules/**"
-  ]
 }

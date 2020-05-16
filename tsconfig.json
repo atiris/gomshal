@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
+    "baseUrl": "./",
     "target": "ES2017",
-    "outDir": "build/main",
-    "rootDir": "src",
     "moduleResolution": "node",
     "module": "commonjs",
     "declaration": true, // generate .d.ts files (declaration files) which contain types of the code
@@ -34,9 +33,12 @@
     // "emitDecoratorMetadata": true,
 
     "lib": ["ES2017"],
-    "typeRoots": ["node_modules/@types", "src/types"]
+    "typeRoots": ["node_modules/@types", "gomshal/src/types"],
+    "paths": {
+      "gomshal": ["./gomshal/src"]
+    },
   },
-  "include": ["src/**/*.ts"],
+  "include": ["./gomshal/src/**/*.ts", "./demo/src/**/*.ts"],
   "exclude": ["node_modules/**"],
-  "compileOnSave": false
+  "compileOnSave": false,
 }

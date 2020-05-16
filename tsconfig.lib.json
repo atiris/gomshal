@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig",
+  "compilerOptions": {
+    "rootDir": "./gomshal/src",
+    "outDir": "./build/main",
+  },
+  "include": ["./gomshal/src/**/*.ts"],
+  "exclude": ["node_modules/**"],
+}
