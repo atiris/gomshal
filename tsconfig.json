@@ -1,44 +1,38 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
-    "target": "ES2017",
+    "baseUrl": ".",
+    "outDir": "./build",
+    "target": "ES2018",
+    "sourceMap": true,
     "moduleResolution": "node",
     "module": "commonjs",
     "declaration": true, // generate .d.ts files (declaration files) which contain types of the code
     "skipLibCheck": true, // because of errors from puppeteer index.d.ts
-    "inlineSourceMap": true,
     "esModuleInterop": true,
-
-    // "strict": true,
-    // Strict Type-Checking Options
-    // "noImplicitAny": true,
-    // "strictNullChecks": true,
-    // "strictFunctionTypes": true,
-    // "strictPropertyInitialization": true,
-    // "noImplicitThis": true,
-    // "alwaysStrict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-
-    // Debugging Options
     "traceResolution": false,
     "listEmittedFiles": false,
     "listFiles": false,
     "pretty": true,
-
-    //* Experimental
-    // "experimentalDecorators": true,
-    // "emitDecoratorMetadata": true,
-
-    "lib": ["ES2017"],
-    "typeRoots": ["node_modules/@types", "gomshal/src/types"],
+    "lib": ["ES2018"],
+    "typeRoots": [
+      "node_modules/@types",
+      "src/lib/types",
+    ],
     "paths": {
-      "gomshal": ["./gomshal/src"]
+      "*": [
+        "node_modules/*",
+        "src/lib/types/*",
+      ],
+      "gomshal": [
+        "src/lib/index" // for reference to gomshal in demo
+      ]
     },
   },
-  "include": ["./gomshal/src/**/*.ts", "./demo/src/**/*.ts"],
-  "exclude": ["node_modules/**"],
-  "compileOnSave": false,
+  "include": [
+    "./src/**/*.ts",
+  ],
 }

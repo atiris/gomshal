@@ -1,4 +1,4 @@
-import { Browser, Page, launch } from 'puppeteer';
+import { Browser, launch, Page } from 'puppeteer';
 
 export enum Step {
   OpenBrowser = 0,

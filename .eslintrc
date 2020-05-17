@@ -28,13 +28,17 @@
     "quotes": ["error", "single", {
       "allowTemplateLiterals": true
     }],
-    "sort-imports": "error",
+    "sort-imports": ["error", {
+      "ignoreCase": true
+    }],
     "import/order": [
       "error",
       {
         "groups": [["builtin", "external", "internal"]],
         "newlines-between": "always"
       }
-    ]
+    ],
+    "semi": "off",
+    "@typescript-eslint/semi": ["error"]
   }
 }
