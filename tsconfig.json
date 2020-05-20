@@ -1,11 +1,12 @@
+// global tsconfig as union version for library and demo
 {
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./build",
     "target": "ES2018",
     "sourceMap": true,
-    "moduleResolution": "node",
-    "module": "commonjs",
+    "moduleResolution": "Node",
+    "module": "CommonJS",
     "declaration": true, // generate .d.ts files (declaration files) which contain types of the code
     "skipLibCheck": true, // because of errors from puppeteer index.d.ts
     "esModuleInterop": true,
@@ -17,7 +18,7 @@
     "listEmittedFiles": false,
     "listFiles": false,
     "pretty": true,
-    "lib": ["ES2018"],
+    "lib": ["ES2018", "DOM"],
     "typeRoots": [
       "node_modules/@types",
       "src/lib/types",
@@ -26,10 +27,10 @@
       "*": [
         "node_modules/*",
         "src/lib/types/*",
-      ],
+      ],/*
       "gomshal": [
-        "src/lib/index" // for reference to gomshal in demo
-      ]
+        "src/lib/index", // for reference to gomshal in demo
+      ] */
     },
   },
   "include": [

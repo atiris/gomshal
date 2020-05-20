@@ -1,0 +1,26 @@
+body {
+  padding: 0;
+  margin: 0;
+  height: 100vh;
+  background-color: #dadade;
+  display: grid;
+  grid-template-rows: auto 150px;
+  row-gap: 5px;
+}
+
+#top {
+  grid-row: 1;
+  overflow-y: scroll;
+  padding: 10px;
+}
+
+#bottom {
+  background-color: rgb(163, 172, 184);
+  grid-row: 2;
+  overflow-y: scroll;
+  padding: 10px;
+}
+
+#log {
+  font-family: 'Courier New', Courier, monospace;
+}

@@ -26,10 +26,11 @@
     "test:lint": "run-s lint",
     "test:unit": "mocha -r ts-node/register ./src/**/*.spec.ts",
     "lint": "eslint .",
-    "build": "run-s clean && tsc && copy",
-    "copy:package": "copyfiles ./src/demo/package.json ./build/demo --flat",
-    "copy:html": "copyfiles ./src/demo/*.html ./build/demo --flat",
+    "build": "run-s clean && run-p build:* && run-s copy",
+    "build:lib": "tsc -p tsconfig.lib.json",
+    "build:demo": "tsc -p tsconfig.demo.json",
     "copy": "run-s copy:*",
+    "copy:demo": "copyfiles ./src/app/package.json ./build/demo/app --flat && copyfiles ./src/app/*.html ./build/demo/app --flat && copyfiles ./src/app/*.css ./build/demo/app --flat",
     "fix": "run-s fix:*",
     "fix:lint": "eslint . --quiet --fix",
     "watch": "run-s clean build:main && run-p \"build:main -- -w\" \"test:unit -- --watch\"",
@@ -39,7 +40,7 @@
     "cov:check": "nyc report && nyc check-coverage --lines 100 --functions 100 --branches 100",
     "coverage": "nyc -r lcov -e .ts -x \"*.spec.ts\" npm run test:unit",
     "coverage:mocha": "nyc --reporter=text mocha -r ts-node/register ./src/**/*.spec.ts",
-    "demo": "electron ./build/demo/",
+    "demo": "run-p build:demo copy:demo && electron ./build/demo/app",
     "doc": "run-s doc:html && open-cli build/docs/index.html",
     "doc:html": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --out build/docs",
     "doc:json": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --json build/docs/typedoc.json",
@@ -83,7 +84,7 @@
     "standard-version": "^8.0.0",
     "trash-cli": "^3.0.0",
     "ts-node": "^8.10.1",
-    "typescript": "^3.9.2"
+    "typescript": "^3.9.3"
   },
   "config": {
     "commitizen": {

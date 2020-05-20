@@ -7,6 +7,16 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Run demo",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run-script",
+        "demo"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Launch Program",
       "skipFiles": [
         "<node_internals>/**"

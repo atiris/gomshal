@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "sourceRoot": "./src/lib",
+    "outDir": "./build/lib",
+    "lib": [
+      "ES2018",
+    ],
+  },
+  "include": [
+    "./src/lib/**/*.ts",
+  ],
+}
