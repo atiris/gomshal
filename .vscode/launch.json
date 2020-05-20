@@ -11,20 +11,9 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run-script",
-        "demo"
-      ]
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch Program",
-      "skipFiles": [
-        "<node_internals>/**"
+        "demo:run"
       ],
-      "program": "${workspaceFolder}\\build\\main\\index.js",
-      "outFiles": [
-        "${workspaceFolder}/**/*.js"
-      ]
+      "preLaunchTask": "npm: demo:prepare"
     },
     {
       "type": "node",
