@@ -4,7 +4,7 @@ body {
   height: 100vh;
   background-color: #dadade;
   display: grid;
-  grid-template-rows: auto 150px;
+  grid-template-rows: auto 200px;
   row-gap: 5px;
 }
 
@@ -12,6 +12,10 @@ body {
   grid-row: 1;
   overflow-y: scroll;
   padding: 10px;
+}
+
+#top ol li {
+  padding: 0.2rem 0;
 }
 
 #bottom {

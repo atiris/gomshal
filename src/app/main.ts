@@ -5,8 +5,8 @@ import { Gomshal, Step } from './../lib';
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1200,
-    height: 600,
+    width: 900,
+    height: 500,
     webPreferences: {
       nodeIntegration: true,
     },
@@ -14,7 +14,7 @@ function createWindow(): void {
 
   win.loadFile('index.html');
   win.setMenuBarVisibility(false);
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 function gomshalInitialize(): void {

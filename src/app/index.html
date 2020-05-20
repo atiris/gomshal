@@ -11,9 +11,33 @@
 
 <body>
   <div id="top">
-    <h1>Gomshal Demo</h1>
-    1. Initialize gomshal library <button type="button"
-      id="gomshal-initialize">gomshal-initialize</button>
+    <h1>Gomshal library</h1>
+    <ol>
+      <li>
+        Initialize
+        <input type="checkbox" name="gomshal-visible"
+          id="gomshal-visible"><label for="gomshal-visible">visible</label>
+        <button type="button"
+          id="gomshal-initialize">gomshal-initialize</button>
+      </li>
+      <li>
+        Login
+        <input type="text" name="gomshal-login" id="gomshal-login">
+        <input type="password" name="gomshal-password" id="gomshal-password">
+        <button type="button"
+          id="gomshal-initialize">gomshal-login</button>
+      </li>
+      <li>
+        Authentication
+        <button type="button"
+          id="gomshal-initialize">gomshal-authentication</button>
+      </li>
+      <li>
+        Shared locations
+        <button type="button"
+          id="gomshal-initialize">gomshal-locations</button>
+      </li>
+    </ol>
   </div>
   <div id="bottom">
     <div id="log">
