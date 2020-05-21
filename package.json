@@ -98,6 +98,11 @@
       "pre-commit": "npm run commit:before"
     }
   },
+  "standard-version": {
+    "skip": {
+      "commit": true
+    }
+  },
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
     "exclude": [
