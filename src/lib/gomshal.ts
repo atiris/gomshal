@@ -47,7 +47,10 @@ export class Gomshal {
   }
 
   private async openBrowser(inputs: GomshalInputs): Promise<GomshalState> {
-    this.browser = await launch({ headless: !this.gomshalSettings.browserVisibility });
+    this.browser = await launch({
+      headless: !this.gomshalSettings.browserVisibility,
+      devtools: this.gomshalSettings.showDevTools || false,
+    });
     this.page = await this.browser.newPage();
     return GomshalState.GoogleMapsNotConnected;
   }

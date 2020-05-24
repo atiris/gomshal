@@ -23,7 +23,8 @@
       "allowTemplateLiterals": true
     }],
     "sort-imports": ["error", {
-      "ignoreCase": true
+      "ignoreCase": true,
+      "ignoreDeclarationSort": true
     }],
     "import/order": [
       "error",

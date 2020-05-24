@@ -3,8 +3,11 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 
 import { BrowserVisibility, Gomshal, GomshalInputs, GomshalSettings } from './../lib';
 
+let gomshal: Gomshal;
+let win: BrowserWindow;
+
 function createWindow(): void {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 900,
     height: 500,
     webPreferences: {
@@ -17,17 +20,27 @@ function createWindow(): void {
   // win.webContents.openDevTools();
 }
 
-function getSharedLocations(): void {
+function gomshalConstructor(): void {
   const gomshalSettings: GomshalSettings = {
     browserVisibility: BrowserVisibility.Visible,
+    showDevTools: true,
   };
-  const gomshal = new Gomshal(gomshalSettings);
-  const gomshalInputs: GomshalInputs = { };
-  gomshal.getSharedLocation(gomshalInputs);
+  gomshal = new Gomshal(gomshalSettings);
+  win.webContents.send('rendererAction', 'initialized');
 }
 
-ipcMain.on('mainAction', function (_event, data) {
-  _event.sender.send('rendererAction', 'xyz ' + data.text);
+function getSharedLocations(): void {
+  const gomshalInputs: GomshalInputs = {};
+  gomshal.getSharedLocation(gomshalInputs);
+  win.webContents.send('rendererAction', 'shared-location');
+}
+
+ipcMain.on('gomshalConstructor', function () {
+  gomshalConstructor();
+});
+
+// full version: function(event, data) { ... }
+ipcMain.on('getSharedLocations', function () {
   getSharedLocations();
 });
 

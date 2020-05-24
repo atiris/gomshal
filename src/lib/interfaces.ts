@@ -23,11 +23,13 @@ export interface GomshalData {
 export interface GomshalSettings {
   googleMapsUrl?: string;
   browserVisibility?: BrowserVisibility;
+  showDevTools?: boolean;
   minimumCacheTime?: number;
 }
 
 export const defaultSettings: GomshalSettings = {
   googleMapsUrl: GOOGLE_MAPS_URL,
   browserVisibility: BrowserVisibility.Hidden,
+  showDevTools: false,
   minimumCacheTime: MINIMUM_CACHE_TIME,
 };

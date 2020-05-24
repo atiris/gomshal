@@ -5,9 +5,9 @@ ipc.once('rendererAction', function(_event, data) {
   document.getElementById('log').innerHTML = data;
 });
 
-document.getElementById('gomshal-initialize')
+document.getElementById('gomshal-constructor')
   .addEventListener('click', () => {
-    ipc.send('mainAction', { text: 'abc' });
+    ipc.send('gomshalConstructor', { text: 'abc' });
   });
 
 export = {};

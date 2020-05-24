@@ -1,16 +1,14 @@
 import { expect } from 'chai';
 
-// eslint-disable-next-line sort-imports
-// import { BrowserVisibility } from './enums';
+import { defaultSettings } from './interfaces';
 import { Gomshal } from './gomshal';
-import { GOOGLE_MAPS_URL } from './interfaces';
 
 describe('gomshal', function () {
   let g: Gomshal;
 
   it('should get default settings', function () {
     g = new Gomshal({});
-    expect(g.gomshalSettings.googleMapsUrl).equal(GOOGLE_MAPS_URL);
+    expect(g.gomshalSettings).deep.equal(defaultSettings);
   });
 
   // before(function () {
