@@ -4,7 +4,8 @@
   "comments": {
     "main": "for const {x} = require('gomshal')",
     "module": "for import {x} from 'gomshal'",
-    "npm run version": "https://www.npmjs.com/package/standard-version https://www.conventionalcommits.org/en/v1.0.0/"
+    "npm run version": "https://www.npmjs.com/package/standard-version https://www.conventionalcommits.org/en/v1.0.0/",
+    "eslint-plugin-import": "is blocking update to eslint ^7.0.0"
   },
   "description": "Extracts Shared locations from Google Maps to json object (replacement for official missing api for shared location) as node.js library. As this is not an official api, it requires to log in to a google account with a username and password.",
   "main": "build/main/index.js",

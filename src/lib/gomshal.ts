@@ -1,54 +1,71 @@
 import { Browser, launch, Page } from 'puppeteer';
 
-export enum Step {
-  OpenBrowser = 0,
-  LoadGoogleMaps = 1,
-  LogIn = 2,
-  SecondAuthentication = 3,
-  ReadLocationData = 4,
-  LogOut = 5,
-  CloseBrowser = 6,
-}
+import { defaultSettings, GomshalData, GomshalInputs, GomshalLocation, GomshalSettings } from './interfaces';
+import { GomshalState } from './enums';
 
-export enum State {
-  Ok = 0,
-  Warning = 1,
-  Error = 2,
-}
 
-export interface GomshalSettings {
-  readonly nextStep: Step;
-  readonly login?: string;
-  readonly password?: string;
-}
-
-export interface GomshalStatus {
-  readonly lastStep: Step;
-  readonly stepState: State;
-}
 
 export class Gomshal {
-
-  private readonly GOOGLE_MAPS_URL = 'https://accounts.google.com/ServiceLogin?service=local';
   private browser: Browser;
+  private page: Page;
 
-  public async initialize(data: GomshalSettings): Promise<GomshalStatus> {
-    const fnc = [this.initializeBrowser][data.nextStep];
-    if (fnc) {
-      return fnc(data);
-    }
-    return { lastStep: data.nextStep, stepState: State.Error };
+  private _gomshalSettings: GomshalSettings;
+  public get gomshalSettings(): GomshalSettings {
+    return this._gomshalSettings;
   }
 
-  private async initializeBrowser(data: GomshalSettings): Promise<GomshalStatus> {
-    this.browser = await launch({headless: false});
-    const page: Page = await this.browser.newPage();
-    const pageResponse = await page.goto(this.GOOGLE_MAPS_URL, { waitUntil: 'networkidle2' });
+  private _state: GomshalState;
+  public get state(): GomshalState {
+    return this._state;
+  }
 
-    return { lastStep: data.nextStep, stepState: (pageResponse.ok ? State.Ok : State.Error) };
+  private _locations: GomshalLocation[];
+  public get locations(): GomshalLocation[] {
+    return this._locations;
+  }
+
+  private _data: GomshalData;
+  public get data(): GomshalData {
+    return this._data;
+  }
+
+  public constructor(settings: GomshalSettings) {
+    this._gomshalSettings = { ...defaultSettings, ...settings };
+    this._state = GomshalState.Closed;
+  }
+
+  public async getSharedLocation(inputs: GomshalInputs): Promise<GomshalData> {
+    if (this._state === GomshalState.Closed) {
+      this._state = await this.openBrowser(inputs);
+    }
+    if (this._state === GomshalState.GoogleMapsNotConnected) {
+      this._state = await this.connectGoogleMaps(inputs);
+    }
+
+
+    return { state: this._state, locations: this._locations };
+  }
+
+  private async openBrowser(inputs: GomshalInputs): Promise<GomshalState> {
+    this.browser = await launch({ headless: !this.gomshalSettings.browserVisibility });
+    this.page = await this.browser.newPage();
+    return GomshalState.GoogleMapsNotConnected;
+  }
+
+  private async connectGoogleMaps(inputs: GomshalInputs): Promise<GomshalState> {
+    await this.page.goto(this.gomshalSettings.googleMapsUrl, { waitUntil: 'networkidle2' });
+    // detect login window
+    const loginElement = await this.page.$('[todo-element-identity]');
+    if (loginElement) {
+      return GomshalState.LoginRequired;
+    } else {
+      return GomshalState.LoggedIn;
+    }
   }
 
   public async close(): Promise<void> {
-    if (this.browser) { this.browser.close; }
+    if (this.browser) {
+      this.browser.close;
+    }
   }
 }

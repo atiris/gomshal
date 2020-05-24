@@ -1,7 +1,7 @@
 // electron backend
 import { app, BrowserWindow, ipcMain } from 'electron';
 
-import { Gomshal, Step } from './../lib';
+import { BrowserVisibility, Gomshal, GomshalInputs, GomshalSettings } from './../lib';
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -17,14 +17,18 @@ function createWindow(): void {
   // win.webContents.openDevTools();
 }
 
-function gomshalInitialize(): void {
-  const g = new Gomshal();
-  g.initialize({ nextStep: Step.OpenBrowser });
+function getSharedLocations(): void {
+  const gomshalSettings: GomshalSettings = {
+    browserVisibility: BrowserVisibility.Visible,
+  };
+  const gomshal = new Gomshal(gomshalSettings);
+  const gomshalInputs: GomshalInputs = { };
+  gomshal.getSharedLocation(gomshalInputs);
 }
 
 ipcMain.on('mainAction', function (_event, data) {
   _event.sender.send('rendererAction', 'xyz ' + data.text);
-  gomshalInitialize();
+  getSharedLocations();
 });
 
 app.whenReady()
