@@ -8,6 +8,7 @@ import { GomshalState } from './enums';
 export class Gomshal {
   private browser: Browser;
   private page: Page;
+  private inputs: GomshalInputs;
 
   private _gomshalSettings: GomshalSettings;
   public get gomshalSettings(): GomshalSettings {
@@ -34,19 +35,22 @@ export class Gomshal {
     this._state = GomshalState.Closed;
   }
 
-  public async getSharedLocation(inputs: GomshalInputs): Promise<GomshalData> {
+  public async getSharedLocation(inputs: GomshalInputs = {}): Promise<GomshalData> {
+    this.inputs = inputs;
     if (this._state === GomshalState.Closed) {
-      this._state = await this.openBrowser(inputs);
+      this._state = await this.openBrowser();
     }
     if (this._state === GomshalState.GoogleMapsNotConnected) {
-      this._state = await this.connectGoogleMaps(inputs);
+      this._state = await this.connectGoogleMaps();
     }
-
+    if (this._state === GomshalState.LoginRequired) {
+      this._state = await this.login();
+    }
 
     return { state: this._state, locations: this._locations };
   }
 
-  private async openBrowser(inputs: GomshalInputs): Promise<GomshalState> {
+  private async openBrowser(): Promise<GomshalState> {
     this.browser = await launch({
       headless: !this.gomshalSettings.browserVisibility,
       devtools: this.gomshalSettings.showDevTools || false,
@@ -55,7 +59,7 @@ export class Gomshal {
     return GomshalState.GoogleMapsNotConnected;
   }
 
-  private async connectGoogleMaps(inputs: GomshalInputs): Promise<GomshalState> {
+  private async connectGoogleMaps(): Promise<GomshalState> {
     await this.page.goto(this.gomshalSettings.googleMapsUrl, { waitUntil: 'networkidle2' });
     // detect login window
     const loginElement = await this.page.$('[todo-element-identity]');
@@ -64,6 +68,22 @@ export class Gomshal {
     } else {
       return GomshalState.LoggedIn;
     }
+  }
+
+  private async login(): Promise<GomshalState> {
+    // const loginElement = await this.page.$('[todo-element-identity]');
+    // loginElement.
+    // await this.page.evaluate(() => {
+    //   document.querySelector('').value = 'abc';
+    // })
+
+    await this.page.waitFor('input[name=search]');
+    await this.page.$eval('input[name=search]', el => el.textContent = this.inputs.login);
+
+    // const element = await page.$(".scrape");
+    // const text = await page.evaluate(element => element.textContent, element);
+
+    return GomshalState.LoggedIn;
   }
 
   public async close(): Promise<void> {
