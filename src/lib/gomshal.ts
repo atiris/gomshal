@@ -3,8 +3,6 @@ import { Browser, launch, Page } from 'puppeteer';
 import { defaultSettings, GomshalData, GomshalInputs, GomshalLocation, GomshalSettings } from './interfaces';
 import { GomshalState } from './enums';
 
-
-
 export class Gomshal {
   private browser: Browser;
   private page: Page;
@@ -35,7 +33,7 @@ export class Gomshal {
     this._state = GomshalState.Closed;
   }
 
-  public async getSharedLocation(inputs: GomshalInputs = {}): Promise<GomshalData> {
+  public async getSharedLocations(inputs: GomshalInputs = {}): Promise<GomshalData> {
     this.inputs = inputs;
     if (this._state === GomshalState.Closed) {
       this._state = await this.openBrowser();
@@ -55,14 +53,19 @@ export class Gomshal {
       headless: !this.gomshalSettings.browserVisibility,
       devtools: this.gomshalSettings.showDevTools || false,
     });
-    this.page = await this.browser.newPage();
+    const pages = await this.browser.pages();
+    if (pages.length > 0) {
+      this.page = pages[0];
+    } else {
+      this.page = await this.browser.newPage();
+    }
     return GomshalState.GoogleMapsNotConnected;
   }
 
   private async connectGoogleMaps(): Promise<GomshalState> {
     await this.page.goto(this.gomshalSettings.googleMapsUrl, { waitUntil: 'networkidle2' });
     // detect login window
-    const loginElement = await this.page.$('[todo-element-identity]');
+    const loginElement = await this.page.$(this.gomshalSettings.loginSelector);
     if (loginElement) {
       return GomshalState.LoginRequired;
     } else {
@@ -71,17 +74,22 @@ export class Gomshal {
   }
 
   private async login(): Promise<GomshalState> {
-    // const loginElement = await this.page.$('[todo-element-identity]');
-    // loginElement.
-    // await this.page.evaluate(() => {
-    //   document.querySelector('').value = 'abc';
-    // })
-
-    await this.page.waitFor('input[name=search]');
-    await this.page.$eval('input[name=search]', el => el.textContent = this.inputs.login);
-
-    // const element = await page.$(".scrape");
-    // const text = await page.evaluate(element => element.textContent, element);
+    await this.page.waitForSelector(this.gomshalSettings.loginSelector, { visible: true });
+    await this.page.evaluate((data) => {
+      const element = document.querySelector(data.selector);
+      console.log('setting value for: ' + data.selector, element);
+      if (element) {
+        (element as HTMLInputElement).value = data.value;
+        // trigger change event
+        const event = new Event('input', {
+          'bubbles': true,
+          'cancelable': true,
+        });
+        element.dispatchEvent(event);
+        element.focus();
+        // element.select();
+      }
+    }, { selector: this.gomshalSettings.loginSelector, value: this.inputs.login });
 
     return GomshalState.LoggedIn;
   }

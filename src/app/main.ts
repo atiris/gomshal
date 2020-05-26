@@ -26,22 +26,33 @@ function gomshalConstructor(): void {
     showDevTools: true,
   };
   gomshal = new Gomshal(gomshalSettings);
-  win.webContents.send('rendererAction', 'initialized');
+  win.webContents.send('rendererAction', { type: 'initialized' });
 }
 
-function getSharedLocations(): void {
-  const gomshalInputs: GomshalInputs = {};
-  gomshal.getSharedLocation(gomshalInputs);
-  win.webContents.send('rendererAction', 'shared-location');
+async function gomshalGetSharedLocations(inputs: GomshalInputs): Promise<void> {
+  const gomshalData = await gomshal.getSharedLocations(inputs);
+  console.log(gomshalData);
+
+  win.webContents.send('rendererAction', { type: 'shared-location', gomshalData: gomshalData });
+}
+
+async function gomshalClose(): Promise<void> {
+  await gomshal.close();
+  gomshal = null;
+  win.webContents.send('rendererAction', { type: 'closed' });
 }
 
 ipcMain.on('gomshalConstructor', function () {
   gomshalConstructor();
 });
 
-// full version: function(event, data) { ... }
-ipcMain.on('getSharedLocations', function () {
-  getSharedLocations();
+ipcMain.on('gomshalGetSharedLocations', function (event, inputs) {
+  console.log(event);
+  gomshalGetSharedLocations(inputs);
+});
+
+ipcMain.on('gomshalClose', function () {
+  gomshalClose();
 });
 
 app.whenReady()
