@@ -57,14 +57,15 @@ export class Gomshal {
     this.browser = await puppeteer
       .use(StealthPlugin())
       .launch({
-        headless: !this.gomshalSettings.browserVisibility,
-        devtools: this.gomshalSettings.showDevTools || false,
+        headless: false, // !this.gomshalSettings.browserVisibility,
+        devtools: false, // !!this.gomshalSettings.showDevTools,
+        // ignoreDefaultArgs: true,
       });
     const page = await this.browser.newPage();
     await page.goto('https://bot.sannysoft.com');
-    await page.waitFor(10000);
-    await page.screenshot({ path: 'stealth.png', fullPage: true });
-    await this.browser.close();
+    // await page.waitFor(10000);
+    // await page.screenshot({ path: 'stealth.png', fullPage: true });
+    // await this.browser.close();
   }
 
   private async openBrowser(): Promise<GomshalState> {
@@ -72,7 +73,8 @@ export class Gomshal {
       .use(StealthPlugin())
       .launch({
         headless: !this.gomshalSettings.browserVisibility,
-        devtools: this.gomshalSettings.showDevTools || false,
+        devtools: !!this.gomshalSettings.showDevTools,
+        ignoreDefaultArgs: true,
       });
 
     const pages = await this.browser.pages();
