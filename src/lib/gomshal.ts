@@ -1,4 +1,6 @@
-import { Browser, launch, Page } from 'puppeteer';
+import { Browser, Page } from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
 import { defaultSettings, GomshalData, GomshalInputs, GomshalLocation, GomshalSettings } from './interfaces';
 import { GomshalState } from './enums';
@@ -31,6 +33,9 @@ export class Gomshal {
   public constructor(settings: GomshalSettings) {
     this._gomshalSettings = { ...defaultSettings, ...settings };
     this._state = GomshalState.Closed;
+
+    puppeteer.use(StealthPlugin());
+
   }
 
   public async getSharedLocations(inputs: GomshalInputs = {}): Promise<GomshalData> {
@@ -48,13 +53,32 @@ export class Gomshal {
     return { state: this._state, locations: this._locations };
   }
 
+  public async stealthTest(): Promise<void> {
+    this.browser = await puppeteer
+      .use(StealthPlugin())
+      .launch({
+        headless: !this.gomshalSettings.browserVisibility,
+        devtools: this.gomshalSettings.showDevTools || false,
+      });
+    const page = await this.browser.newPage();
+    await page.goto('https://bot.sannysoft.com');
+    await page.waitFor(10000);
+    await page.screenshot({ path: 'stealth.png', fullPage: true });
+    await this.browser.close();
+  }
+
   private async openBrowser(): Promise<GomshalState> {
-    this.browser = await launch({
-      headless: !this.gomshalSettings.browserVisibility,
-      devtools: this.gomshalSettings.showDevTools || false,
-    });
+    this.browser = await puppeteer
+      .use(StealthPlugin())
+      .launch({
+        headless: !this.gomshalSettings.browserVisibility,
+        devtools: this.gomshalSettings.showDevTools || false,
+      });
+
     const pages = await this.browser.pages();
-    if (pages.length > 0) {
+    // temporary disabled for test with new page
+    // eslint-disable-next-line no-constant-condition
+    if (false && pages.length > 0) {
       this.page = pages[0];
     } else {
       this.page = await this.browser.newPage();
@@ -73,8 +97,8 @@ export class Gomshal {
     }
   }
 
-  private async login(): Promise<GomshalState> {
-    await this.page.waitForSelector(this.gomshalSettings.loginSelector, { visible: true });
+  private async setInput(selector: string, value: string): Promise<void> {
+    if (!value) { return; }
     await this.page.evaluate((data) => {
       const element = document.querySelector(data.selector);
       console.log('setting value for: ' + data.selector, element);
@@ -89,7 +113,26 @@ export class Gomshal {
         element.focus();
         // element.select();
       }
-    }, { selector: this.gomshalSettings.loginSelector, value: this.inputs.login });
+    }, { selector: selector, value: value });
+  }
+
+  private async clickElement(selector: string): Promise<void> {
+    await this.page.evaluate((data) => {
+      const element = document.querySelector(data.selector);
+      if (element) {
+        element.click();
+      }
+    }, { selector: selector });
+  }
+
+  private async login(): Promise<GomshalState> {
+    await this.page.waitForSelector(this.gomshalSettings.loginSelector, { visible: true });
+    await this.setInput(this.gomshalSettings.loginSelector, this.inputs.login);
+    await this.clickElement(this.gomshalSettings.loginNextButtonSelector);
+
+    await this.page.waitForSelector(this.gomshalSettings.passwordSelector, { visible: true });
+    await this.setInput(this.gomshalSettings.passwordSelector, this.inputs.password);
+    await this.clickElement(this.gomshalSettings.passwordNextButtonSelector);
 
     return GomshalState.LoggedIn;
   }

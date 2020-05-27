@@ -28,4 +28,9 @@ document.getElementById('gomshal-close')
     ipc.send('gomshalClose');
   });
 
+document.getElementById('stealth-test')
+  .addEventListener('click', () => {
+    ipc.send('stealthTest');
+  });
+
 export = {};

@@ -57,7 +57,9 @@
     "node": ">=10.0"
   },
   "dependencies": {
-    "puppeteer": "^3.1.0"
+    "puppeteer": "^3.1.0",
+    "puppeteer-extra": "^3.1.9",
+    "puppeteer-extra-plugin-stealth": "^2.4.9"
   },
   "devDependencies": {
     "@bitjson/typedoc": "^0.15.0-0",

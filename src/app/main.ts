@@ -42,6 +42,11 @@ async function gomshalClose(): Promise<void> {
   win.webContents.send('rendererAction', { type: 'closed' });
 }
 
+async function stealthTest(): Promise<void> {
+  await gomshal.stealthTest();
+  win.webContents.send('rendererAction', { type: 'stealth-test' });
+}
+
 ipcMain.on('gomshalConstructor', function () {
   gomshalConstructor();
 });
@@ -53,6 +58,10 @@ ipcMain.on('gomshalGetSharedLocations', function (event, inputs) {
 
 ipcMain.on('gomshalClose', function () {
   gomshalClose();
+});
+
+ipcMain.on('stealthTest', function () {
+  stealthTest();
 });
 
 app.whenReady()
