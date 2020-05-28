@@ -12,6 +12,10 @@
 # Testing
 credentials.json
 
+# Temporary
+tmp/
+temp/
+
 # Node JS
 ## Logs
 logs
