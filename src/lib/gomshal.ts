@@ -1,6 +1,7 @@
-import { Browser, Page } from 'puppeteer';
+import { Browser, executablePath, Page } from 'puppeteer';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { execFile } from 'child_process';
 
 import { defaultSettings, GomshalData, GomshalInputs, GomshalLocation, GomshalSettings } from './interfaces';
 import { GomshalState } from './enums';
@@ -54,6 +55,24 @@ export class Gomshal {
   }
 
   public async stealthTest(): Promise<void> {
+    const chromiumParams: string[] = [
+      '--user-data-dir=./.userdata',
+      '--profile-directory="Default"',
+      // '--remote-debugging-port=9222',
+      '--no-first-run',
+      '--no-default-browser-check',
+    ];
+    const chromiumPath = executablePath();
+    execFile(chromiumPath, chromiumParams, (error: unknown, stdout: unknown) => {
+      if (error) {
+        throw error;
+      }
+      console.log(stdout);
+    });
+    // const browserWSEndpoint = '';
+    // this.browser = await puppeteer.connect({browserWSEndpoint: browserWSEndpoint});
+
+    /*
     this.browser = await puppeteer
       .use(StealthPlugin())
       .launch({
@@ -66,21 +85,40 @@ export class Gomshal {
     // await page.waitFor(10000);
     // await page.screenshot({ path: 'stealth.png', fullPage: true });
     // await this.browser.close();
+    // */
   }
 
   private async openBrowser(): Promise<GomshalState> {
+
+    const chromiumArgs: string[] = [
+      '--user-data-dir=./.userdata',
+      '--profile-directory="Default"',
+      // '--remote-debugging-port=9222',
+      '--no-first-run',
+      '--no-default-browser-check',
+    ];
+    this.browser = await puppeteer
+      .use(StealthPlugin())
+      .launch({
+        headless: false,
+        args: chromiumArgs,
+      });
+
+    /*
     this.browser = await puppeteer
       .use(StealthPlugin())
       .launch({
         headless: !this.gomshalSettings.browserVisibility,
         devtools: !!this.gomshalSettings.showDevTools,
+        userDataDir: './userdata',
         ignoreDefaultArgs: true,
       });
+    */
 
     const pages = await this.browser.pages();
     // temporary disabled for test with new page
     // eslint-disable-next-line no-constant-condition
-    if (false && pages.length > 0) {
+    if (pages.length > 0) {
       this.page = pages[0];
     } else {
       this.page = await this.browser.newPage();
@@ -140,8 +178,11 @@ export class Gomshal {
   }
 
   public async close(): Promise<void> {
+    if (this.page) {
+      await this.page.close();
+    }
     if (this.browser) {
-      this.browser.close;
+      await this.browser.close();
     }
   }
 }
