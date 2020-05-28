@@ -5,6 +5,7 @@
     "outDir": "./build/lib",
     "lib": [
       "ES2018",
+      "DOM", // puppeteer require dom (document, HTMLInputElement, Event)
     ],
   },
   "include": [
