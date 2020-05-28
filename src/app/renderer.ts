@@ -15,7 +15,7 @@ document.getElementById('gomshal-constructor')
 document.getElementById('gomshal-get-shared-locations')
   .addEventListener('click', () => {
     const login = (document.getElementById('gomshal-login') as HTMLInputElement).value;
-    const password = (document.getElementById('gomshal-login') as HTMLInputElement).value;
+    const password = (document.getElementById('gomshal-password') as HTMLInputElement).value;
     ipc.send('gomshalGetSharedLocations', {
       login: login,
       password: password,

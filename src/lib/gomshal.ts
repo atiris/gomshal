@@ -1,18 +1,10 @@
-import {
-  Browser,
-  // executablePath,
-  Page,
-} from 'puppeteer';
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { firefox } from 'playwright';
-// import { execFile } from 'child_process';
+import { BrowserContext, firefox, Page } from 'playwright';
 
 import { defaultSettings, GomshalData, GomshalInputs, GomshalLocation, GomshalSettings } from './interfaces';
-import { GomshalState } from './enums';
+import { BrowserVisibility, GomshalState } from './enums';
 
 export class Gomshal {
-  private browser: Browser;
+  private browserContext: BrowserContext;
   private page: Page;
   private inputs: GomshalInputs;
 
@@ -39,9 +31,6 @@ export class Gomshal {
   public constructor(settings: GomshalSettings) {
     this._gomshalSettings = { ...defaultSettings, ...settings };
     this._state = GomshalState.Closed;
-
-    puppeteer.use(StealthPlugin());
-
   }
 
   public async getSharedLocations(inputs: GomshalInputs = {}): Promise<GomshalData> {
@@ -59,110 +48,35 @@ export class Gomshal {
     return { state: this._state, locations: this._locations };
   }
 
-  // https://stackoverflow.com/questions/55267465/puppeteer-launch-a-new-tab-in-current-window-not-new-window
-  /*
-  private async initializeMe(): Promise<void> {
-    console.log('Connecting.....');
-    this.browser = await puppeteer.connect({
-      browserURL: 'http://127.0.0.1:9286',
-
-    });
-    this.page = await this.browser.newPage();
-    this.page.goto('https://maps.google.com');
-  }
-  */
-
   public async stealthTest(): Promise<void> {
     const brco = await firefox.launchPersistentContext('./.userdata', {
       headless: false,
     });
     const pg = await brco.newPage();
-    await pg.goto('https://maps.google.com');
-    setTimeout(() => {
+    await pg.goto('https://bot.sannysoft.com');
+    setTimeout(async () => {
+      await pg.goto('https://maps.google.com');
       brco.close();
     }, 60000);
-
-
-    /*
-    const chromiumParams: string[] = [
-      '--user-data-dir=./.userdata',
-      '--profile-directory=Default',
-      '--remote-debugging-port=9286',
-      '--no-first-run',
-      '--no-default-browser-check',
-    ];
-    const chromiumPath = executablePath();
-    execFile(chromiumPath, chromiumParams, (error: unknown, stdout: unknown) => {
-      if (error) {
-        throw error;
-      }
-      console.log(stdout);
-    });
-    setTimeout(() => {
-      this.initializeMe();
-    }, 1000);
-    */
-
-    // const browserWSEndpoint = '';
-    // this.browser = await puppeteer.connect({browserWSEndpoint: browserWSEndpoint});
-
-    /*
-    this.browser = await puppeteer
-      .use(StealthPlugin())
-      .launch({
-        headless: false, // !this.gomshalSettings.browserVisibility,
-        devtools: false, // !!this.gomshalSettings.showDevTools,
-        // ignoreDefaultArgs: true,
-      });
-    const page = await this.browser.newPage();
-    await page.goto('https://bot.sannysoft.com');
-    // await page.waitFor(10000);
-    // await page.screenshot({ path: 'stealth.png', fullPage: true });
-    // await this.browser.close();
-    // */
   }
 
   private async openBrowser(): Promise<GomshalState> {
-
-    const chromiumArgs: string[] = [
-      '--user-data-dir=./.userdata',
-      '--profile-directory="Default"',
-      // '--remote-debugging-port=9222',
-      '--no-first-run',
-      '--no-default-browser-check',
-    ];
-    this.browser = await puppeteer
-      .use(StealthPlugin())
-      .launch({
-        headless: false,
-        args: chromiumArgs,
-      });
-
-    /*
-    this.browser = await puppeteer
-      .use(StealthPlugin())
-      .launch({
-        headless: !this.gomshalSettings.browserVisibility,
-        devtools: !!this.gomshalSettings.showDevTools,
-        userDataDir: './userdata',
-        ignoreDefaultArgs: true,
-      });
-    */
-
-    const pages = await this.browser.pages();
-    // temporary disabled for test with new page
-    // eslint-disable-next-line no-constant-condition
+    this.browserContext = await firefox.launchPersistentContext('./.userdata', {
+      headless: this.gomshalSettings.browserVisibility === BrowserVisibility.Hidden,
+    });
+    this.page = await this.browserContext.newPage();
+    const pages = this.browserContext.pages();
     if (pages.length > 0) {
       this.page = pages[0];
+      if (pages.length > 1) { pages[1].close(); }
     } else {
-      this.page = await this.browser.newPage();
+      this.page = await this.browserContext.newPage();
     }
     return GomshalState.GoogleMapsNotConnected;
   }
 
   private async connectGoogleMaps(): Promise<GomshalState> {
-    await this.page.goto(this.gomshalSettings.googleMapsUrl, { waitUntil: 'networkidle2' });
-    // detect login window
+    await this.page.goto(this.gomshalSettings.googleMapsUrl, { waitUntil: 'networkidle' });
     const loginElement = await this.page.$(this.gomshalSettings.loginSelector);
     if (loginElement) {
       return GomshalState.LoginRequired;
@@ -176,7 +90,7 @@ export class Gomshal {
     await this.page.evaluate((data) => {
       const element = document.querySelector(data.selector);
       console.log('setting value for: ' + data.selector, element);
-      if (element) {
+      if (element && (element instanceof HTMLInputElement)) {
         (element as HTMLInputElement).value = data.value;
         // trigger change event
         const event = new Event('input', {
@@ -192,7 +106,7 @@ export class Gomshal {
 
   private async clickElement(selector: string): Promise<void> {
     await this.page.evaluate((data) => {
-      const element = document.querySelector(data.selector);
+      const element = document.querySelector(data.selector) as HTMLElement;
       if (element) {
         element.click();
       }
@@ -200,13 +114,16 @@ export class Gomshal {
   }
 
   private async login(): Promise<GomshalState> {
-    await this.page.waitForSelector(this.gomshalSettings.loginSelector, { visible: true });
+    await this.page.waitForSelector(this.gomshalSettings.loginSelector, { timeout: this.gomshalSettings.detectionTimeout });
     await this.setInput(this.gomshalSettings.loginSelector, this.inputs.login);
     await this.clickElement(this.gomshalSettings.loginNextButtonSelector);
 
-    await this.page.waitForSelector(this.gomshalSettings.passwordSelector, { visible: true });
+    await this.page.waitForSelector(this.gomshalSettings.passwordSelector, { timeout: this.gomshalSettings.detectionTimeout });
     await this.setInput(this.gomshalSettings.passwordSelector, this.inputs.password);
     await this.clickElement(this.gomshalSettings.passwordNextButtonSelector);
+
+    // wait for element id div#profileIdentifier
+    // if there is one, then 2fa is required
 
     return GomshalState.LoggedIn;
   }
@@ -215,8 +132,8 @@ export class Gomshal {
     if (this.page) {
       await this.page.close();
     }
-    if (this.browser) {
-      await this.browser.close();
+    if (this.browserContext) {
+      await this.browserContext.close();
     }
   }
 }

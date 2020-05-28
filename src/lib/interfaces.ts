@@ -5,6 +5,7 @@ export const GOOGLE_MAPS_LOGIN_SELECTOR = 'input[type="email"]';
 export const GOOGLE_MAPS_LOGIN_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
 export const GOOGLE_MAPS_PASSWORD_SELECTOR = 'input[type="password"]';
 export const GOOGLE_MAPS_PASSWORD_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
+export const DETECTION_TIMEOUT = 10 * 1000;
 export const MINIMUM_CACHE_TIME = 60 * 1000;
 
 export interface GomshalInputs {
@@ -32,6 +33,7 @@ export interface GomshalSettings {
   passwordNextButtonSelector?: string;
   browserVisibility?: BrowserVisibility;
   showDevTools?: boolean;
+  detectionTimeout?: number;
   minimumCacheTime?: number;
 }
 
@@ -43,5 +45,6 @@ export const defaultSettings: GomshalSettings = {
   passwordNextButtonSelector: GOOGLE_MAPS_PASSWORD_NEXT_BUTTON_SELECTOR,
   browserVisibility: BrowserVisibility.Hidden,
   showDevTools: false,
+  detectionTimeout: DETECTION_TIMEOUT,
   minimumCacheTime: MINIMUM_CACHE_TIME,
 };
