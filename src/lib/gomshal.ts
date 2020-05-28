@@ -1,7 +1,12 @@
-import { Browser, executablePath, Page } from 'puppeteer';
+import {
+  Browser,
+  // executablePath,
+  Page,
+} from 'puppeteer';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { execFile } from 'child_process';
+import { firefox } from 'playwright';
+// import { execFile } from 'child_process';
 
 import { defaultSettings, GomshalData, GomshalInputs, GomshalLocation, GomshalSettings } from './interfaces';
 import { GomshalState } from './enums';
@@ -54,11 +59,35 @@ export class Gomshal {
     return { state: this._state, locations: this._locations };
   }
 
+  // https://stackoverflow.com/questions/55267465/puppeteer-launch-a-new-tab-in-current-window-not-new-window
+  /*
+  private async initializeMe(): Promise<void> {
+    console.log('Connecting.....');
+    this.browser = await puppeteer.connect({
+      browserURL: 'http://127.0.0.1:9286',
+
+    });
+    this.page = await this.browser.newPage();
+    this.page.goto('https://maps.google.com');
+  }
+  */
+
   public async stealthTest(): Promise<void> {
+    const brco = await firefox.launchPersistentContext('./.userdata', {
+      headless: false,
+    });
+    const pg = await brco.newPage();
+    await pg.goto('https://maps.google.com');
+    setTimeout(() => {
+      brco.close();
+    }, 60000);
+
+
+    /*
     const chromiumParams: string[] = [
       '--user-data-dir=./.userdata',
-      '--profile-directory="Default"',
-      // '--remote-debugging-port=9222',
+      '--profile-directory=Default',
+      '--remote-debugging-port=9286',
       '--no-first-run',
       '--no-default-browser-check',
     ];
@@ -69,6 +98,11 @@ export class Gomshal {
       }
       console.log(stdout);
     });
+    setTimeout(() => {
+      this.initializeMe();
+    }, 1000);
+    */
+
     // const browserWSEndpoint = '';
     // this.browser = await puppeteer.connect({browserWSEndpoint: browserWSEndpoint});
 
