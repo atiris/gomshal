@@ -11,7 +11,6 @@ export const MINIMUM_CACHE_TIME = 60 * 1000;
 export interface GomshalInputs {
   readonly login?: string;
   readonly password?: string;
-  readonly twoFactorAuthenticated?: boolean;
 }
 
 export interface GomshalLocation {
