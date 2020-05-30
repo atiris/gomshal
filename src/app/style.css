@@ -8,6 +8,10 @@ body {
   row-gap: 5px;
 }
 
+h2 {
+  margin-top: 5px;
+}
+
 #top {
   grid-row: 1;
   overflow-y: scroll;
@@ -27,4 +31,9 @@ body {
 
 #log {
   font-family: 'Courier New', Courier, monospace;
+}
+
+textarea.input {
+  width: calc(100vw - 100px);
+  height: 2rem;
 }

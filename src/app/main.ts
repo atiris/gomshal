@@ -9,7 +9,7 @@ let win: BrowserWindow;
 function createWindow(): void {
   win = new BrowserWindow({
     width: 900,
-    height: 500,
+    height: 750,
     webPreferences: {
       nodeIntegration: true,
     },

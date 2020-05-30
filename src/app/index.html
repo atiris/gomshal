@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Gomshal Demo</title>
+  <title>Gomshal library demo</title>
   <meta http-equiv="Content-Security-Policy"
     content="script-src 'self' 'unsafe-inline';" />
   <link rel="stylesheet" href="style.css">
@@ -11,35 +11,66 @@
 
 <body>
   <div id="top">
-    <h1>Gomshal library</h1>
+    <h2>Gomshal library demo</h2>
     <ol>
       <li>
-        Initialize
-        <input type="checkbox" name="gomshal-visible"
-          id="gomshal-visible"><label for="gomshal-visible">visible</label>
-        <button type="button"
-          id="gomshal-constructor">constructor</button>
-      </li>
-      <li>
-        Get locations
+        Create <i>gSettings: GomshalSettings</i> object from JSON<br>
+        <textarea name="gomshal-settings-json" id="gomshal-settings-json"
+          class="input">{ }</textarea>
         <br>
-        Login: <input type="text" name="gomshal-login" id="gomshal-login">
-        Password: <input type="password" name="gomshal-password" id="gomshal-password">
+        <button type="button" id="gomshal-settings">gSettings =
+          JSON.parse(...)</button>
+        <button type="button" id="gomshal-settings-empty">empty {}</button>
+        <button type="button" id="gomshal-settings-visible-devtools">visible:
+          BrowserVisibility.Visible, showDevTools: True</button>
+        <button type="button" id="gomshal-settings-all">all settings</button>
+      </li>
+      <li>
+        Initialize <i>gomshal: Gomshal</i> instance with <i>gSettings</i>
+        settings
+        <br>
+        <button type="button" id="gomshal-constructor">gomshal: Gomshal = new
+          Gomshal(gSettings)</button>
+      </li>
+      <li>
+        Create (or replace last) <i>gInputs: GomshalInputs</i> object from
+        JSON<br>
+        <textarea name="gomshal-inputs-json" id="gomshal-inputs-json"
+          class="input">{ }</textarea>
+        <br>
+        <button type="button" id="gomshal-inputs">gInputs =
+          JSON.parse(...)</button>
+        <button type="button" id="gomshal-inputs-empty">empty {}</button>
+        <button type="button" id="gomshal-inputs-login-password">login,
+          password</button>
+      </li>
+      <li>
+        Call location with actual inputs <i>gomshal.getLocations(gInputs)</i>
         <br>
         <button type="button"
-          id="gomshal-get-shared-locations">get-shared-locations</button>
+          id="gomshal-get-shared-locations">gomshal.getSharedLocations(gInputs)</button>
+        <br>
+        If response is not <i>success</i> you can change <i>i</i> in previous
+        step and call <i>getSharedLocations</i> again.<br>
+        If 2FA is required, allow login on phone and then call
+        <i>getSharedLocations</i> with empty <i>gInputs</i>.
       </li>
       <li>
-        Close
-        <button type="button"
-          id="gomshal-close">close</button>
-      </li>
-      <li>
-        Stealth test
-        <button type="button"
-          id="stealth-test">stealth-test</button>
+        Close browser, clean everything with <i>gomshal.close()</i>
+        <br>
+        <button type="button" id="gomshal-close">gomshal.close()</button>
       </li>
     </ol>
+    <ul>
+      <li>
+        Only open browser <i>gomshal.startBrowser()</i> (please initialize
+        <i>gomshal:
+          Gomshal</i> before call this)
+        <br>
+        <button type="button"
+          id="gomshal-start-browser">gomshal.startBrowser()</button>
+      </li>
+    </ul>
   </div>
   <div id="bottom">
     <div id="log">
