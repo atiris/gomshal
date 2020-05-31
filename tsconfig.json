@@ -8,7 +8,7 @@
     "moduleResolution": "Node",
     "module": "CommonJS",
     "declaration": true, // generate .d.ts files (declaration files) which contain types of the code
-    "skipLibCheck": true, // because of errors from puppeteer index.d.ts
+    "skipLibCheck": true, // because of errors in node libs
     "esModuleInterop": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

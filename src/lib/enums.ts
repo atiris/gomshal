@@ -1,5 +1,6 @@
 export enum GomshalState {
   Closed = 0,
+  Ok = 1,
   GoogleMapsNotConnected = 1,
   LoginRequired = 2,
   TwoFactorAuthenticationRequired = 3,
@@ -8,12 +9,4 @@ export enum GomshalState {
   LocationDownloadError = 6,
   LocationParsingError = 7,
   UnknownError = 8,
-  Cached = 9,
-  Ok = 10,
-}
-
-export enum BrowserVisibility {
-  Hidden = 0,
-  VisibleUntilLoggedIn = 1,
-  Visible = 2,
 }

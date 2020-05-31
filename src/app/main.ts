@@ -1,7 +1,7 @@
 // electron backend
 import { app, BrowserWindow, ipcMain } from 'electron';
 
-import { BrowserVisibility, Gomshal, GomshalInputs, GomshalSettings } from './../lib';
+import { Gomshal, GomshalConfiguration, GomshalState } from './../lib';
 
 let gomshal: Gomshal;
 let win: BrowserWindow;
@@ -9,7 +9,7 @@ let win: BrowserWindow;
 function createWindow(): void {
   win = new BrowserWindow({
     width: 900,
-    height: 750,
+    height: 650,
     webPreferences: {
       nodeIntegration: true,
     },
@@ -21,47 +21,83 @@ function createWindow(): void {
 }
 
 function gomshalConstructor(): void {
-  const gomshalSettings: GomshalSettings = {
-    browserVisibility: BrowserVisibility.Visible,
-    showDevTools: true,
-  };
-  gomshal = new Gomshal(gomshalSettings);
-  win.webContents.send('rendererAction', { type: 'initialized' });
+  if (gomshal) {
+    win.webContents.send('rendererAction', { type: 'constructor', text: '// gomshal instance already exists, call close first' });
+  } else {
+    gomshal = new Gomshal();
+    win.webContents.send('rendererAction', { type: 'constructor', text: 'gomshal = new Gomshal();' });
+  }
 }
 
-async function gomshalGetSharedLocations(inputs: GomshalInputs): Promise<void> {
-  const gomshalData = await gomshal.getSharedLocations(inputs);
-  console.log(gomshalData);
+async function gomshalInitialize(gConfiguration: GomshalConfiguration): Promise<void> {
+  if (gomshal) {
+    const state: GomshalState = await gomshal.initialize(gConfiguration);
+    if (Object.keys(gConfiguration).length > 0) {
+      win.webContents.send('rendererAction', { type: 'initialize', text: 'const conf: GomshalConfiguration = {...};' });
+      win.webContents.send('rendererAction', { type: 'initialize', text: 'const state: GomshalState = gomshal.initialize(conf);' });
+    } else {
+      win.webContents.send('rendererAction', { type: 'initialize', text: 'const state = gomshal.initialize();' });
+    }
+    win.webContents.send('rendererAction', { type: 'state', text: 'state === ' + GomshalState[state] + ';' });
+  } else {
+    win.webContents.send('rendererAction', { type: 'initialize', text: '// no gomshal instance, please call new Gomshal()' });
+  }
+}
 
-  win.webContents.send('rendererAction', { type: 'shared-location', gomshalData: gomshalData });
+function gomshalConfiguration(): GomshalConfiguration {
+  if (gomshal) {
+    return gomshal.configuration;
+  } else {
+    const temporary: Gomshal = new Gomshal();
+    const conf: GomshalConfiguration = temporary.configuration;
+    temporary.close();
+    return conf;
+  }
+}
+
+async function gomshalSharedLocations(): Promise<void> {
+  if (gomshal) {
+    win.webContents.send('rendererAction', { type: 'sharedLocations', text: 'data: GomshalData = await gomshal.sharedLocations();' });
+
+    const data = await gomshal.sharedLocations();
+    const dataText = JSON.stringify(data);
+
+    win.webContents.send('rendererAction', { type: 'sharedLocations', text: 'data === ' + dataText + ';', gomshalData: data });
+  } else {
+    win.webContents.send('rendererAction', { type: 'sharedLocations', text: '// no gomshal instance, please call new Gomshal()' });
+  }
 }
 
 async function gomshalClose(): Promise<void> {
-  await gomshal.close();
-  gomshal = null;
-  win.webContents.send('rendererAction', { type: 'closed' });
+  if (gomshal) {
+    await gomshal.close();
+    gomshal = null;
+    win.webContents.send('rendererAction', { type: 'close', text: 'await gomshal.close();' });
+  } else {
+    win.webContents.send('rendererAction', { type: 'close', text: '// gomshal instance not initialized' });
+  }
 }
 
-async function stealthTest(): Promise<void> {
-  await gomshal.stealthTest();
-  win.webContents.send('rendererAction', { type: 'stealth-test' });
-}
+ipcMain.on('gomshalInitialize', function (_event, gConfiguration: GomshalConfiguration
+) {
+  gomshalInitialize(gConfiguration);
+});
 
 ipcMain.on('gomshalConstructor', function () {
   gomshalConstructor();
 });
 
-ipcMain.on('gomshalGetSharedLocations', function (event, inputs) {
-  console.log(event);
-  gomshalGetSharedLocations(inputs);
+ipcMain.handle('gomshalConfiguration', async function () {
+  const configuration = gomshalConfiguration();
+  return configuration;
+});
+
+ipcMain.on('gomshalSharedLocations', function () {
+  gomshalSharedLocations();
 });
 
 ipcMain.on('gomshalClose', function () {
   gomshalClose();
-});
-
-ipcMain.on('stealthTest', function () {
-  stealthTest();
 });
 
 app.whenReady()
@@ -69,6 +105,7 @@ app.whenReady()
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') { app.quit(); }
 });
+
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) { createWindow(); }
 });

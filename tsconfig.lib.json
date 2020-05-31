@@ -3,10 +3,7 @@
   "compilerOptions": {
     "sourceRoot": "./src/lib",
     "outDir": "./build/lib",
-    "lib": [
-      "ES2018",
-      "DOM", // puppeteer require dom (document, HTMLInputElement, Event)
-    ],
+    "lib": ["ES2018", "DOM"],
   },
   "include": [
     "./src/lib/**/*.ts",

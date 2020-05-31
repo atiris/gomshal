@@ -30,10 +30,13 @@ h2 {
 }
 
 #log {
+  margin-top: -1rem;
+  padding-bottom: 0.5rem;
   font-family: 'Courier New', Courier, monospace;
+  font-size: 0.88rem;
 }
 
 textarea.input {
   width: calc(100vw - 100px);
-  height: 2rem;
+  height: 3rem;
 }

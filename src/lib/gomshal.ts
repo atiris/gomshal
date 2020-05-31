@@ -1,16 +1,25 @@
-import { BrowserContext, firefox, Page } from 'playwright';
+import { BrowserContext, firefox, Page, Response } from 'playwright';
 
-import { defaultSettings, GomshalData, GomshalInputs, GomshalLocation, GomshalSettings } from './interfaces';
-import { BrowserVisibility, GomshalState } from './enums';
+import { defaultConfiguration, GomshalConfiguration, GomshalData, GomshalLocation } from './interfaces';
+import { GomshalState } from './enums';
 
 export class Gomshal {
   private browserContext: BrowserContext;
   private page: Page;
-  private inputs: GomshalInputs;
 
-  private _gomshalSettings: GomshalSettings;
-  public get gomshalSettings(): GomshalSettings {
-    return this._gomshalSettings;
+  private _callback: (data: GomshalData) => void;
+
+  private _configuration: GomshalConfiguration;
+  public get configuration(): GomshalConfiguration {
+    return {
+      ...this._configuration,
+      ...{
+        login: undefined,
+        loginSet: this._configuration.login !== undefined,
+        password: undefined,
+        passwordSet: this._configuration.password !== undefined,
+      },
+    };
   }
 
   private _state: GomshalState;
@@ -28,13 +37,25 @@ export class Gomshal {
     return this._data;
   }
 
-  public constructor(settings: GomshalSettings) {
-    this._gomshalSettings = { ...defaultSettings, ...settings };
+  public constructor() {
+    this._configuration = defaultConfiguration;
     this._state = GomshalState.Closed;
   }
 
-  public async getSharedLocations(inputs: GomshalInputs = {}): Promise<GomshalData> {
-    this.inputs = inputs;
+  public async onSharedLocations(callback: (data: GomshalData) => void): Promise<void> {
+    this._callback = callback;
+  }
+
+  private newSharedLocations(data: GomshalData): void {
+    if (this._callback) { this._callback(data); }
+  }
+
+  public async initialize(customConfiguration?: GomshalConfiguration): Promise<GomshalState> {
+    // update configuration if new configuration is set as input argument
+    if (customConfiguration !== undefined) {
+      this._configuration = { ...defaultConfiguration, ...customConfiguration };
+    }
+    // initialize browser
     if (this._state === GomshalState.Closed) {
       this._state = await this.openBrowser();
     }
@@ -45,30 +66,40 @@ export class Gomshal {
       this._state = await this.login();
     }
 
-    return { state: this._state, locations: this._locations };
+    /*
+    // d.hG
+    var Jxe = function (a, b, c) {
+      c = void 0 === c ? 2 : c;
+      a.ka || (a.ka = _.ry(a.Ma, {
+        callback: b.callback(function () {
+          a.ka = null;
+          var d = a.T.get();
+          a.Na(b);
+          for (var f = new _.HK, g = 0; g < d.hG.length; g++) {
+            var h = d.hG[g];
+    */
+
+    return this._state;
   }
 
-  public async stealthTest(): Promise<void> {
-    const brco = await firefox.launchPersistentContext('./.userdata', {
-      headless: false,
-    });
-    const pg = await brco.newPage();
-    await pg.goto('https://bot.sannysoft.com');
-    setTimeout(async () => {
-      await pg.goto('https://maps.google.com');
-      brco.close();
-    }, 60000);
+  public async sharedLocations(): Promise<GomshalData> {
+    if (this._state !== GomshalState.Ok) {
+      return undefined;
+    } else {
+      // TODO: get last shared locations
+      return { state: this._state, locations: this._locations };
+    }
   }
 
   private async openBrowser(): Promise<GomshalState> {
     this.browserContext = await firefox.launchPersistentContext('./.userdata', {
-      headless: this.gomshalSettings.browserVisibility === BrowserVisibility.Hidden,
+      headless: !!this._configuration.headless,
     });
-    this.page = await this.browserContext.newPage();
+    // this.page = await this.browserContext.newPage();
     const pages = this.browserContext.pages();
     if (pages.length > 0) {
       this.page = pages[0];
-      if (pages.length > 1) { pages[1].close(); }
+      // if (pages.length > 1) { pages[1].close(); }
     } else {
       this.page = await this.browserContext.newPage();
     }
@@ -76,8 +107,15 @@ export class Gomshal {
   }
 
   private async connectGoogleMaps(): Promise<GomshalState> {
-    await this.page.goto(this.gomshalSettings.googleMapsUrl, { waitUntil: 'networkidle' });
-    const loginElement = await this.page.$(this.gomshalSettings.loginSelector);
+    await this.page.goto(this._configuration.googleMapsUrl, { waitUntil: 'networkidle' });
+    // this.page.waitForEvent('response');
+    this.page.on('response', (response: Response): void => {
+      console.log(response);
+      if (response.status() === 200) {
+        this.newSharedLocations({ state: GomshalState.Ok, locations: [] });
+      }
+    });
+    const loginElement = await this.page.$(this._configuration.loginSelector);
     if (loginElement) {
       return GomshalState.LoginRequired;
     } else {
@@ -114,16 +152,13 @@ export class Gomshal {
   }
 
   private async login(): Promise<GomshalState> {
-    await this.page.waitForSelector(this.gomshalSettings.loginSelector, { timeout: this.gomshalSettings.detectionTimeout });
-    await this.setInput(this.gomshalSettings.loginSelector, this.inputs.login);
-    await this.clickElement(this.gomshalSettings.loginNextButtonSelector);
+    await this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout });
+    await this.setInput(this._configuration.loginSelector, this._configuration.login);
+    await this.clickElement(this._configuration.loginNextButtonSelector);
 
-    await this.page.waitForSelector(this.gomshalSettings.passwordSelector, { timeout: this.gomshalSettings.detectionTimeout });
-    await this.setInput(this.gomshalSettings.passwordSelector, this.inputs.password);
-    await this.clickElement(this.gomshalSettings.passwordNextButtonSelector);
-
-    // wait for element id div#profileIdentifier
-    // if there is one, then 2fa is required
+    await this.page.waitForSelector(this._configuration.passwordSelector, { timeout: this._configuration.detectionTimeout });
+    await this.setInput(this._configuration.passwordSelector, this._configuration.password);
+    await this.clickElement(this._configuration.passwordNextButtonSelector);
 
     return GomshalState.LoggedIn;
   }

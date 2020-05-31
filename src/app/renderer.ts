@@ -1,66 +1,76 @@
-import { GomshalData } from './../lib';
+export = {};
 
 // html fronend
 const ipc = require('electron').ipcRenderer;
 
-ipc.once('rendererAction', function (_event, data: { type: string; data?: GomshalData }) {
-  document.getElementById('log').innerHTML = data.type;
+const conf = {
+  login: '',
+  password: '',
+  googleMapsUrl: '',
+  loggedInSelector: '',
+  loggedOutSelector: '',
+  loginSelector: '',
+  loginNextButtonSelector: '',
+  passwordSelector: '',
+  passwordNextButtonSelector: '',
+  headless: true,
+  hideAfterLogin: false,
+  showDevTools: false,
+  detectionTimeout: 0,
+  minimumCacheTime: 0,
+};
+
+function addLog(text: string): void {
+  const log = document.getElementById('log');
+  log.innerHTML += text;
+  log.scrollIntoView({ block: 'end', inline: 'end' });
+}
+
+ipc.on('rendererAction', function (_event: unknown, data: { type: string; text?: string; data?: unknown }) {
+  addLog('<br>' + data.type + (data.text ? ': ' + data.text : ''));
 });
-
-document.getElementById('gomshal-settings-empty')
-  .addEventListener('click', () => {
-    (document.getElementById('gomshal-settings-json') as HTMLInputElement).value = '{ }';
-  });
-
-document.getElementById('gomshal-settings-all')
-  .addEventListener('click', () => {
-    (document.getElementById('gomshal-settings-json') as HTMLInputElement).value = '{ "googleMapsUrl": "", "loginSelector": "", "loginNextButtonSelector": "", "passwordSelector": "", "passwordNextButtonSelector": "", "browserVisibility": 0, "showDevTools": false, "detectionTimeout": 0, "minimumCacheTime": 0 }';
-  });
-
-document.getElementById('gomshal-settings-visible-devtools')
-  .addEventListener('click', () => {
-    (document.getElementById('gomshal-settings-json') as HTMLInputElement).value = '{ "browserVisibility": 2, "showDevTools": True }';
-  });
-
-document.getElementById('gomshal-settings')
-  .addEventListener('click', () => {
-    const jst = (document.getElementById('gomshal-setting-json') as HTMLInputElement).value;
-    const gs = JSON.parse(jst);
-    ipc.send('gomshalSettings', gs);
-  });
 
 document.getElementById('gomshal-constructor')
   .addEventListener('click', () => {
     ipc.send('gomshalConstructor');
   });
 
-document.getElementById('gomshal-inputs-empty')
+document.getElementById('gomshal-configuration-empty')
   .addEventListener('click', () => {
-    (document.getElementById('gomshal-inputs-json') as HTMLInputElement).value = '{ }';
+    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = '{}';
   });
 
-document.getElementById('gomshal-inputs-login-password')
+document.getElementById('gomshal-configuration-login-password')
   .addEventListener('click', () => {
-    (document.getElementById('gomshal-inputs-json') as HTMLInputElement).value = '{ "login": "", "password": "" }';
+    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = '{"login":"","password":""}';
   });
 
-document.getElementById('gomshal-settings')
+document.getElementById('gomshal-configuration-visible-devtools')
   .addEventListener('click', () => {
-    const jst = (document.getElementById('gomshal-setting-json') as HTMLInputElement).value;
-    const gs = JSON.parse(jst);
-    ipc.send('gomshalSettings', gs);
+    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = '{"headless":false,"showDevTools":true}';
   });
 
-
-document.getElementById('gomshal-get-shared-locations')
+document.getElementById('gomshal-configuration-all')
   .addEventListener('click', () => {
-    const login = (document.getElementById('gomshal-login') as HTMLInputElement).value;
-    const password = (document.getElementById('gomshal-password') as HTMLInputElement).value;
-    ipc.send('gomshalGetSharedLocations', {
-      login: login,
-      password: password,
-      // twoFactorAuthenticated: true,
-    });
+    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = JSON.stringify(conf);
+  });
+
+document.getElementById('gomshal-initialize')
+  .addEventListener('click', () => {
+    const textareaValue = (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value;
+    const gConfiguration = JSON.parse(textareaValue);
+    ipc.send('gomshalInitialize', gConfiguration);
+  });
+
+document.getElementById('gomshal-configuration')
+  .addEventListener('click', async () => {
+    const conf = await ipc.invoke('gomshalConfiguration');
+    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = JSON.stringify(conf);
+  });
+
+document.getElementById('gomshal-shared-locations')
+  .addEventListener('click', () => {
+    ipc.send('gomshalSharedLocations');
   });
 
 document.getElementById('gomshal-close')
@@ -68,9 +78,3 @@ document.getElementById('gomshal-close')
     ipc.send('gomshalClose');
   });
 
-document.getElementById('stealth-test')
-  .addEventListener('click', () => {
-    ipc.send('stealthTest');
-  });
-
-export = {};
