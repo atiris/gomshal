@@ -40,3 +40,7 @@ textarea.input {
   width: calc(100vw - 100px);
   height: 3rem;
 }
+
+.primary {
+  color: #0063be;
+}

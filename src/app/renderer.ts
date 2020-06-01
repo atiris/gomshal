@@ -7,8 +7,10 @@ const conf = {
   login: '',
   password: '',
   googleMapsUrl: '',
-  loggedInSelector: '',
-  loggedOutSelector: '',
+  locationSharingUrlSubstring: '',
+  locationSharingResponseSkipStart: 0,
+  isLoggedInSelector: '',
+  isLoggedOutSelector: '',
   loginSelector: '',
   loginNextButtonSelector: '',
   passwordSelector: '',
@@ -71,6 +73,16 @@ document.getElementById('gomshal-configuration')
 document.getElementById('gomshal-shared-locations')
   .addEventListener('click', () => {
     ipc.send('gomshalSharedLocations');
+  });
+
+document.getElementById('gomshal-on-shared-locations-log')
+  .addEventListener('click', () => {
+    ipc.send('gomshalOnSharedLocationsLog');
+  });
+
+document.getElementById('gomshal-on-shared-locations-undefined')
+  .addEventListener('click', () => {
+    ipc.send('gomshalOnSharedLocationsUndefined');
   });
 
 document.getElementById('gomshal-close')

@@ -1,13 +1,13 @@
 import { BrowserContext, firefox, Page, Response } from 'playwright';
 
-import { defaultConfiguration, GomshalConfiguration, GomshalData, GomshalLocation } from './interfaces';
-import { GomshalState } from './enums';
+import { defaultConfiguration, GomshalConfiguration, SharedLocation, SharedLocations } from './interfaces';
+import { GomshalError, GomshalWaitingFor } from './enums';
 
 export class Gomshal {
   private browserContext: BrowserContext;
   private page: Page;
 
-  private _callback: (data: GomshalData) => void;
+  private _callback: (data: SharedLocations) => void;
 
   private _configuration: GomshalConfiguration;
   public get configuration(): GomshalConfiguration {
@@ -22,52 +22,69 @@ export class Gomshal {
     };
   }
 
-  private _state: GomshalState;
-  public get state(): GomshalState {
+  private _state: GomshalWaitingFor;
+  public get state(): GomshalWaitingFor {
     return this._state;
   }
 
-  private _locations: GomshalLocation[];
-  public get locations(): GomshalLocation[] {
+  private _error: GomshalError;
+  public get error(): GomshalError {
+    return this._error;
+  }
+
+  private _locations: SharedLocation[];
+  public get locations(): SharedLocation[] {
     return this._locations;
   }
 
-  private _data: GomshalData;
-  public get data(): GomshalData {
-    return this._data;
+  private _sharedLocations: SharedLocations;
+  public get sharedLocations(): SharedLocations {
+    return this._sharedLocations;
   }
 
   public constructor() {
     this._configuration = defaultConfiguration;
-    this._state = GomshalState.BrowserClosed;
+    this._state = GomshalWaitingFor.Initialize;
+    this._error = GomshalError.NoError;
   }
 
-  public async onSharedLocations(callback: (data: GomshalData) => void): Promise<void> {
+  public async onSharedLocations(callback?: (data: SharedLocations) => void): Promise<void> {
     this._callback = callback;
   }
 
-  private newSharedLocations(data: GomshalData): void {
-    if (this._callback) { this._callback(data); }
+  private newSharedLocations(): void {
+    if (this._callback !== undefined) {
+      this._callback(this._sharedLocations);
+    }
   }
 
-  public async initialize(customConfiguration?: GomshalConfiguration): Promise<GomshalState> {
+  public async initialize(customConfiguration?: GomshalConfiguration): Promise<GomshalWaitingFor> {
     // update configuration if new configuration is set as input argument
     if (customConfiguration !== undefined) {
       this._configuration = { ...defaultConfiguration, ...customConfiguration };
     }
     // initialize browser
-    if (this._state === GomshalState.BrowserClosed) {
-      this._state = await this.openBrowser();
+    if (this._state === GomshalWaitingFor.Initialize
+      && this.browserContext === undefined
+      && this.page === undefined) {
+      await this.openBrowser();
+      await this.openPage();
     }
-    if (this._state === GomshalState.GoogleMapsLoadingError) {
-      this._state = await this.loadGoogleMaps();
+    if (this._state === GomshalWaitingFor.Initialize) {
+      await this.loadGoogleMapsPage();
+      await this.evaluateGoogleMapsLoginState();
     }
-    if (this._state === GomshalState.LoginEvaluation) {
-      this._state = await this.loginEvaluation();
+    if (this._state === GomshalWaitingFor.LoginAndPassword) {
+      await this.login();
     }
-    if (this._state === GomshalState.LoginRequired) {
-      this._state = await this.login();
+    if (this._state === GomshalWaitingFor.TwoFactorConfirmation) {
+      await this.login();
     }
+    if (this._state === GomshalWaitingFor.LocationData) {
+      await this.subscribeForSharedLocationResponse();
+    }
+
+    return this._state;
 
     // if injection is needed, this piece of code contains the part where
     // the shared position is processed. The data are in the parameter `d.hG`
@@ -80,70 +97,139 @@ export class Gomshal {
     //       a.Na(b);
     //       for (var f = new _.HK, g = 0; g < d.hG.length; g++) {
     //         var h = d.hG[g];
-
-    return this._state;
   }
 
-  public async sharedLocations(): Promise<GomshalData> {
-    if (this._state !== GomshalState.Ok) {
-      return undefined;
-    } else {
-      // TODO: get last shared locations
-      return { state: this._state, locations: this._locations };
-    }
+  public async createSharedLocations(): Promise<void> {
+    this._sharedLocations = {
+      ...{ state: this._state, timestamp: (new Date).toISOString() },
+      ...(this._locations === undefined ? {} : { locations: this._locations }),
+      ...(this._error === GomshalError.NoError ? {} : { error: this._error }),
+    };
   }
 
-  private async openBrowser(): Promise<GomshalState> {
-    this.browserContext = await firefox.launchPersistentContext('./.userdata', {
-      headless: !!this._configuration.headless,
-    });
-    const pages = this.browserContext.pages();
-    if (pages.length > 0) {
-      this.page = pages[0];
-    } else {
-      this.page = await this.browserContext.newPage();
-    }
-    return GomshalState.GoogleMapsLoadingError;
-  }
-
-  private async loadGoogleMaps(): Promise<GomshalState> {
-    await this.page.goto(this._configuration.googleMapsUrl, { waitUntil: 'domcontentloaded' });
-    this.page.on('response', async (response: Response): Promise<void> => {
-      if (response.url().indexOf(this._configuration.locationSharingUrlSubstring) >= 0) {
-        const body = await response.body();
-        const bodyString = body.toString(undefined, this._configuration.locationSharingSkipResponseCharsStart)
-          .replace(/[\n\r]+/g, '');
-        console.log(bodyString);
-        this.newSharedLocations({ state: GomshalState.Ok, locations: [] });
-      }
-    });
-
-    return GomshalState.LoginEvaluation;
-  }
-
-  private async loginEvaluation(): Promise<GomshalState> {
-    const lIn = this.page.waitForSelector(this._configuration.isLoggedInSelector)
-      .then(() => { return 'isLoggedIn'; })
-      .catch(() => 'loggedInDetectionError');
-    const lOut = this.page.waitForSelector(this._configuration.isLoggedOutSelector)
-      .then(() => { return 'isLoggedOut'; })
-      .catch(() => 'loggedOutDetectionError');
-    const time = new Promise((resolve) => { setTimeout(resolve, 10000, 'timeout'); });
-
-    const first = await Promise.race([time, lIn, lOut]);
-    if (first === 'isLoggedIn') {
-      return GomshalState.Ok;
-    } else if (first === 'isLoggedOut') {
-      return GomshalState.LoginRequired;
-    } else if (first === 'timeout') {
-      return this._state;
-    } else {
-      return GomshalState.AuthenticationError;
-    }
-  }
-
-  private async login(): Promise<GomshalState> {
+  private async openBrowser(): Promise<boolean> {
     try {
+      this.browserContext = await firefox.launchPersistentContext('./.userdata', {
+        headless: !!this._configuration.headless,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async openPage(): Promise<boolean> {
+    try {
+      const pages = this.browserContext.pages();
+      if (pages.length > 0) {
+        this.page = pages[0];
+      } else {
+        this.page = await this.browserContext.newPage();
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async loadGoogleMapsPage(): Promise<boolean> {
+    try {
+      await this.page.goto(this._configuration.googleMapsUrl, { waitUntil: 'domcontentloaded' });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async subscribeForSharedLocationResponse(): Promise<boolean> {
+    try {
+      this.page.on('response', (data) => { this.processResponseData(data); });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async processResponseData(response: Response): Promise<boolean> {
+    try {
+      const url = response.url();
+      const urlMatchSubstring = url.indexOf(this._configuration.locationSharingUrlSubstring) >= 0;
+      if (urlMatchSubstring) {
+        await this.processSharedLocationBody(response);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async processSharedLocationBody(response: Response): Promise<boolean> {
+    try {
+      const body = await response.body();
+      const bodyString = body.toString(undefined, this._configuration.locationSharingResponseSkipStart)
+        .replace(/[\n\r]+/g, '')
+        .trim();
+      this.processSharedLocationData(bodyString);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async processSharedLocationData(sharedLocationString: string): Promise<boolean> {
+    try {
+      // console.log(sharedLocationString);
+      this._sharedLocations = {
+        state: this._state,
+        timestamp: (new Date).toISOString(),
+        locations: [{
+          id: (new Date).toISOString(),
+        }],
+      };
+      this.newSharedLocations();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async detectLoginState(timeout = 10000): Promise<string> {
+    const isLoggedIn = this.page.waitForSelector(this._configuration.isLoggedInSelector, { timeout: timeout })
+      .then(() => { return 'isLoggedIn'; })
+      .catch(() => 'noSelectorDetected');
+    const isLoggedOut = this.page.waitForSelector(this._configuration.isLoggedOutSelector, { timeout: timeout })
+      .then(() => { return 'isLoggedOut'; })
+      .catch(() => 'noSelectorDetected');
+
+    const firstDetected = await Promise.race([isLoggedIn, isLoggedOut]);
+    return firstDetected;
+  }
+
+  private async evaluateGoogleMapsLoginState(): Promise<boolean> {
+    try {
+      const first: string = await this.detectLoginState();
+      if (first === 'isLoggedIn') {
+        this._state = GomshalWaitingFor.LocationData;
+      } else if (first === 'isLoggedOut') {
+        this._state = GomshalWaitingFor.LoginAndPassword;
+      } else if (first === 'noSelectorDetected') {
+        this._error = GomshalError.WrongGoogleMapsSite;
+        this._state = GomshalWaitingFor.Initialize;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async login(): Promise<boolean> {
+    try {
+      if (this._configuration.login === undefined || this._configuration.password === undefined) {
+        this._error = GomshalError.MissingLoginOrPassword;
+        this._state = GomshalWaitingFor.LoginAndPassword;
+        return false;
+      }
+
       await this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout });
       await this.setInput(this._configuration.loginSelector, this._configuration.login);
       await this.clickElement(this._configuration.loginNextButtonSelector);
@@ -151,10 +237,16 @@ export class Gomshal {
       await this.page.waitForSelector(this._configuration.passwordSelector, { timeout: this._configuration.detectionTimeout });
       await this.setInput(this._configuration.passwordSelector, this._configuration.password);
       await this.clickElement(this._configuration.passwordNextButtonSelector);
+
+
+      this._state = GomshalWaitingFor.TwoFactorConfirmation;
+      this._state = GomshalWaitingFor.LocationData;
+      return true;
     } catch {
-      return this._state;
+      this._error = GomshalError.WrongAuthentication;
+      this._state = GomshalWaitingFor.LoginAndPassword;
+      return false;
     }
-    return GomshalState.LoginEvaluation;
   }
 
   private async setInput(selector: string, value: string): Promise<void> {

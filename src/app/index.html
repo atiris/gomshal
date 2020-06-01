@@ -16,7 +16,8 @@
       <li>
         Initialize <i>gomshal: Gomshal</i> instance
         <br>
-        <button type="button" id="gomshal-constructor">gomshal = new
+        <button type="button" class="primary" id="gomshal-constructor">gomshal =
+          new
           Gomshal()</button>
       </li>
       <li>
@@ -24,21 +25,23 @@
           JSON.parse(...)</i> and call <i>initialize</i>.<br>
         <textarea name="gomshal-configuration-json"
           id="gomshal-configuration-json" class="input">{}</textarea>
-        <br>
-        <button type="button" id="gomshal-configuration-empty">default
-          configuration</button>
-        <button type="button" id="gomshal-configuration-login-password">login,
-          password</button>
-        <button type="button"
-          id="gomshal-configuration-visible-devtools">development mode</button>
-        <button type="button" id="gomshal-configuration-all">show all
-          settings</button>
-        <br>
-        <button type="button"
-          id="gomshal-initialize">gomshal.initialize(gConfiguration)</button>
-        <button type="button"
-          id="gomshal-configuration">gomshal.configuration()</button>
-        <br>
+        <div>
+          <button type="button" id="gomshal-configuration-empty">default
+            configuration</button>
+          <button type="button" id="gomshal-configuration-login-password">login,
+            password</button>
+          <button type="button"
+            id="gomshal-configuration-visible-devtools">development
+            mode</button>
+          <button type="button" id="gomshal-configuration-all">show all
+            settings</button>
+        </div>
+        <div style="margin-top: 3px;">
+          <button type="button" class="primary"
+            id="gomshal-initialize">gomshal.initialize(gConfiguration)</button>
+          <button type="button" id="gomshal-configuration">get
+            gomshal.configuration()</button>
+        </div>
         If response state is not <i>GomshalState.Ok</i> you can change
         <i>gInputs</i> and call <i>initialize</i> again.
         <br>
@@ -46,15 +49,22 @@
         <i>sharedLocations</i> with empty <i>gInputs</i>.
       </li>
       <li>
-        Get shared locations<br>
-        <button type="button"
+        Get last detected shared locations, set or remove callback when new
+        shared locations data detected.<br>
+        <button type="button" class="primary"
           id="gomshal-shared-locations">gomshal.sharedLocations()</button>
+        <button type="button" class="primary"
+          id="gomshal-on-shared-locations-log">gomshal.onSharedLocations(console.log)</button>
+        <button type="button"
+          id="gomshal-on-shared-locations-undefined">gomshal.onSharedLocations()</button>
       </li>
       <li>
-        Close page and browser <i>gomshal.close()</i> and set <i>gomshal =
+        Close GoogleMaps page and browser <i>gomshal.close()</i> and set
+        <i>gomshal =
           undefined;</i>
         <br>
-        <button type="button" id="gomshal-close">gomshal.close()</button>
+        <button type="button" class="primary"
+          id="gomshal-close">gomshal.close()</button>
       </li>
     </ol>
   </div>

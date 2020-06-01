@@ -1,8 +1,8 @@
-import { GomshalState } from './enums';
+import { GomshalError, GomshalWaitingFor } from './enums';
 
 export const GOOGLE_MAPS_URL = 'https://www.google.com/maps/';
 export const GOOGLE_MAPS_LOCATION_SHARING_URL_SUBSTRING = '/maps/rpc/locationsharing/read';
-export const GOOGLE_MAPS_SKIP_RESPONSE_CHARS_START = 4;
+export const GOOGLE_MAPS_RESPONSE_SKIP_START = 4;
 export const GOOGLE_MAPS_IS_LOGGED_IN_SELECTOR = 'a[href*="SignOut"]';
 export const GOOGLE_MAPS_IS_LOGGED_OUT_SELECTOR = 'a[href*="ServiceLogin"]';
 export const GOOGLE_MAPS_LOGIN_SELECTOR = 'input[type="email"]';
@@ -12,15 +12,17 @@ export const GOOGLE_MAPS_PASSWORD_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
 export const DETECTION_TIMEOUT = 10 * 1000;
 export const MINIMUM_CACHE_TIME = 60 * 1000;
 
-export interface GomshalLocation {
+export interface SharedLocation {
   id?: string;
   name?: string;
   location?: string;
 }
 
-export interface GomshalData {
-  state: GomshalState;
-  locations?: Array<GomshalLocation>;
+export interface SharedLocations {
+  state: GomshalWaitingFor;
+  timestamp: string;
+  error?: GomshalError;
+  locations?: Array<SharedLocation>;
 }
 
 export interface GomshalConfiguration {
@@ -30,7 +32,7 @@ export interface GomshalConfiguration {
   passwordSet?: boolean;
   googleMapsUrl?: string;
   locationSharingUrlSubstring?: string;
-  locationSharingSkipResponseCharsStart?: number;
+  locationSharingResponseSkipStart?: number;
   isLoggedInSelector?: string;
   isLoggedOutSelector?: string;
   loginSelector?: string;
@@ -47,7 +49,7 @@ export interface GomshalConfiguration {
 export const defaultConfiguration: GomshalConfiguration = {
   googleMapsUrl: GOOGLE_MAPS_URL,
   locationSharingUrlSubstring: GOOGLE_MAPS_LOCATION_SHARING_URL_SUBSTRING,
-  locationSharingSkipResponseCharsStart: GOOGLE_MAPS_SKIP_RESPONSE_CHARS_START,
+  locationSharingResponseSkipStart: GOOGLE_MAPS_RESPONSE_SKIP_START,
   isLoggedInSelector: GOOGLE_MAPS_IS_LOGGED_IN_SELECTOR,
   isLoggedOutSelector: GOOGLE_MAPS_IS_LOGGED_OUT_SELECTOR,
   loginSelector: GOOGLE_MAPS_LOGIN_SELECTOR,
