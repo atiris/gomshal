@@ -39,7 +39,7 @@ export class Gomshal {
 
   public constructor() {
     this._configuration = defaultConfiguration;
-    this._state = GomshalState.Closed;
+    this._state = GomshalState.BrowserClosed;
   }
 
   public async onSharedLocations(callback: (data: GomshalData) => void): Promise<void> {
@@ -56,28 +56,30 @@ export class Gomshal {
       this._configuration = { ...defaultConfiguration, ...customConfiguration };
     }
     // initialize browser
-    if (this._state === GomshalState.Closed) {
+    if (this._state === GomshalState.BrowserClosed) {
       this._state = await this.openBrowser();
     }
-    if (this._state === GomshalState.GoogleMapsNotConnected) {
-      this._state = await this.connectGoogleMaps();
+    if (this._state === GomshalState.GoogleMapsLoadingError) {
+      this._state = await this.loadGoogleMaps();
+    }
+    if (this._state === GomshalState.LoginEvaluation) {
+      this._state = await this.loginEvaluation();
     }
     if (this._state === GomshalState.LoginRequired) {
       this._state = await this.login();
     }
 
-    /*
-    // d.hG
-    var Jxe = function (a, b, c) {
-      c = void 0 === c ? 2 : c;
-      a.ka || (a.ka = _.ry(a.Ma, {
-        callback: b.callback(function () {
-          a.ka = null;
-          var d = a.T.get();
-          a.Na(b);
-          for (var f = new _.HK, g = 0; g < d.hG.length; g++) {
-            var h = d.hG[g];
-    */
+    // if injection is needed, this piece of code contains the part where
+    // the shared position is processed. The data are in the parameter `d.hG`
+    // var Jxe = function (a, b, c) {
+    //   c = void 0 === c ? 2 : c;
+    //   a.ka || (a.ka = _.ry(a.Ma, {
+    //     callback: b.callback(function () {
+    //       a.ka = null;
+    //       var d = a.T.get();
+    //       a.Na(b);
+    //       for (var f = new _.HK, g = 0; g < d.hG.length; g++) {
+    //         var h = d.hG[g];
 
     return this._state;
   }
@@ -95,32 +97,64 @@ export class Gomshal {
     this.browserContext = await firefox.launchPersistentContext('./.userdata', {
       headless: !!this._configuration.headless,
     });
-    // this.page = await this.browserContext.newPage();
     const pages = this.browserContext.pages();
     if (pages.length > 0) {
       this.page = pages[0];
-      // if (pages.length > 1) { pages[1].close(); }
     } else {
       this.page = await this.browserContext.newPage();
     }
-    return GomshalState.GoogleMapsNotConnected;
+    return GomshalState.GoogleMapsLoadingError;
   }
 
-  private async connectGoogleMaps(): Promise<GomshalState> {
-    await this.page.goto(this._configuration.googleMapsUrl, { waitUntil: 'networkidle' });
-    // this.page.waitForEvent('response');
-    this.page.on('response', (response: Response): void => {
-      console.log(response);
-      if (response.status() === 200) {
+  private async loadGoogleMaps(): Promise<GomshalState> {
+    await this.page.goto(this._configuration.googleMapsUrl, { waitUntil: 'domcontentloaded' });
+    this.page.on('response', async (response: Response): Promise<void> => {
+      if (response.url().indexOf(this._configuration.locationSharingUrlSubstring) >= 0) {
+        const body = await response.body();
+        const bodyString = body.toString(undefined, this._configuration.locationSharingSkipResponseCharsStart)
+          .replace(/[\n\r]+/g, '');
+        console.log(bodyString);
         this.newSharedLocations({ state: GomshalState.Ok, locations: [] });
       }
     });
-    const loginElement = await this.page.$(this._configuration.loginSelector);
-    if (loginElement) {
+
+    return GomshalState.LoginEvaluation;
+  }
+
+  private async loginEvaluation(): Promise<GomshalState> {
+    const lIn = this.page.waitForSelector(this._configuration.isLoggedInSelector)
+      .then(() => { return 'isLoggedIn'; })
+      .catch(() => 'loggedInDetectionError');
+    const lOut = this.page.waitForSelector(this._configuration.isLoggedOutSelector)
+      .then(() => { return 'isLoggedOut'; })
+      .catch(() => 'loggedOutDetectionError');
+    const time = new Promise((resolve) => { setTimeout(resolve, 10000, 'timeout'); });
+
+    const first = await Promise.race([time, lIn, lOut]);
+    if (first === 'isLoggedIn') {
+      return GomshalState.Ok;
+    } else if (first === 'isLoggedOut') {
       return GomshalState.LoginRequired;
+    } else if (first === 'timeout') {
+      return this._state;
     } else {
-      return GomshalState.LoggedIn;
+      return GomshalState.AuthenticationError;
     }
+  }
+
+  private async login(): Promise<GomshalState> {
+    try {
+      await this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout });
+      await this.setInput(this._configuration.loginSelector, this._configuration.login);
+      await this.clickElement(this._configuration.loginNextButtonSelector);
+
+      await this.page.waitForSelector(this._configuration.passwordSelector, { timeout: this._configuration.detectionTimeout });
+      await this.setInput(this._configuration.passwordSelector, this._configuration.password);
+      await this.clickElement(this._configuration.passwordNextButtonSelector);
+    } catch {
+      return this._state;
+    }
+    return GomshalState.LoginEvaluation;
   }
 
   private async setInput(selector: string, value: string): Promise<void> {
@@ -149,18 +183,6 @@ export class Gomshal {
         element.click();
       }
     }, { selector: selector });
-  }
-
-  private async login(): Promise<GomshalState> {
-    await this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout });
-    await this.setInput(this._configuration.loginSelector, this._configuration.login);
-    await this.clickElement(this._configuration.loginNextButtonSelector);
-
-    await this.page.waitForSelector(this._configuration.passwordSelector, { timeout: this._configuration.detectionTimeout });
-    await this.setInput(this._configuration.passwordSelector, this._configuration.password);
-    await this.clickElement(this._configuration.passwordNextButtonSelector);
-
-    return GomshalState.LoggedIn;
   }
 
   public async close(): Promise<void> {

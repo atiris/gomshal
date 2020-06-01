@@ -1,9 +1,10 @@
 import { GomshalState } from './enums';
 
 export const GOOGLE_MAPS_URL = 'https://www.google.com/maps/';
-// export const GOOGLE_MAPS_URL = 'https://accounts.google.com/ServiceLogin?service=local';
-export const GOOGLE_MAPS_LOGGED_IN_SELECTOR = 'a[href*="ServiceLogin"]';
-export const GOOGLE_MAPS_LOGGED_OUT_SELECTOR = 'a[href*="SignOut"]';
+export const GOOGLE_MAPS_LOCATION_SHARING_URL_SUBSTRING = '/maps/rpc/locationsharing/read';
+export const GOOGLE_MAPS_SKIP_RESPONSE_CHARS_START = 4;
+export const GOOGLE_MAPS_IS_LOGGED_IN_SELECTOR = 'a[href*="SignOut"]';
+export const GOOGLE_MAPS_IS_LOGGED_OUT_SELECTOR = 'a[href*="ServiceLogin"]';
 export const GOOGLE_MAPS_LOGIN_SELECTOR = 'input[type="email"]';
 export const GOOGLE_MAPS_LOGIN_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
 export const GOOGLE_MAPS_PASSWORD_SELECTOR = 'input[type="password"]';
@@ -28,8 +29,10 @@ export interface GomshalConfiguration {
   loginSet?: boolean;
   passwordSet?: boolean;
   googleMapsUrl?: string;
-  loggedInSelector?: string;
-  loggedOutSelector?: string;
+  locationSharingUrlSubstring?: string;
+  locationSharingSkipResponseCharsStart?: number;
+  isLoggedInSelector?: string;
+  isLoggedOutSelector?: string;
   loginSelector?: string;
   loginNextButtonSelector?: string;
   passwordSelector?: string;
@@ -43,8 +46,10 @@ export interface GomshalConfiguration {
 
 export const defaultConfiguration: GomshalConfiguration = {
   googleMapsUrl: GOOGLE_MAPS_URL,
-  loggedInSelector: GOOGLE_MAPS_LOGGED_IN_SELECTOR,
-  loggedOutSelector: GOOGLE_MAPS_LOGGED_OUT_SELECTOR,
+  locationSharingUrlSubstring: GOOGLE_MAPS_LOCATION_SHARING_URL_SUBSTRING,
+  locationSharingSkipResponseCharsStart: GOOGLE_MAPS_SKIP_RESPONSE_CHARS_START,
+  isLoggedInSelector: GOOGLE_MAPS_IS_LOGGED_IN_SELECTOR,
+  isLoggedOutSelector: GOOGLE_MAPS_IS_LOGGED_OUT_SELECTOR,
   loginSelector: GOOGLE_MAPS_LOGIN_SELECTOR,
   loginNextButtonSelector: GOOGLE_MAPS_LOGIN_NEXT_BUTTON_SELECTOR,
   passwordSelector: GOOGLE_MAPS_PASSWORD_SELECTOR,
