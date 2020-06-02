@@ -178,6 +178,26 @@ export class Gomshal {
 
   private async processSharedLocationData(sharedLocationString: string): Promise<boolean> {
     try {
+      const sharedLocationJson = JSON.parse(sharedLocationString);
+      const timestamp = sharedLocationJson[8];
+
+      const peoples = sharedLocationJson[0];
+      const firstPerson = peoples[0];
+      const personalData = firstPerson[6]; // alternative firstPerson[0]
+      const firstId = personalData[0];
+      const firstPhoto = personalData[1];
+      const firstNameSurname = personalData[2];
+      const firstNameShort = personalData[3];
+      const locationData = firstPerson[1];
+      const lat = locationData[1][1];
+      const lon = locationData[1][2];
+      const locationTimeStamp = locationData[2];
+      const locationAddress = locationData[4];
+      const locationCountry = locationData[6]; // petrzalka == AT ?
+
+      const myData = sharedLocationJson[9];
+
+      console.log(sharedLocationJson);
       // console.log(sharedLocationString);
       this._sharedLocations = {
         state: this._state,
@@ -189,6 +209,8 @@ export class Gomshal {
       this.newSharedLocations();
       return true;
     } catch {
+      this._error = GomshalError.LocationDataParsingError;
+      this._state = GomshalWaitingFor.Initialize;
       return false;
     }
   }
