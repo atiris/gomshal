@@ -2,9 +2,9 @@ body {
   padding: 0;
   margin: 0;
   height: 100vh;
-  background-color: #dadade;
+  background-color: #d0d0d4;
   display: grid;
-  grid-template-rows: auto 200px;
+  grid-template-rows: 400px auto;
   row-gap: 5px;
 }
 
@@ -23,17 +23,40 @@ h2 {
 }
 
 #bottom {
-  background-color: rgb(163, 172, 184);
+  background-color: #e2e2e2;
   grid-row: 2;
   overflow-y: scroll;
   padding: 10px;
 }
 
 #log {
-  margin-top: -1rem;
   padding-bottom: 0.5rem;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.88rem;
+}
+
+.log-item{
+  display: block;
+}
+
+.log-type{
+  display: inline-block;
+  font-weight: bold;
+  width: 160px;
+  color: #063b74;
+}
+
+.log-type::after {
+  content: ':';
+  color: #d30700;
+}
+
+.log-content {
+  display: inline-block;
+}
+
+.comment {
+  color: #848484;
 }
 
 textarea.input {

@@ -3,6 +3,7 @@ export = {};
 // html fronend
 const ipc = require('electron').ipcRenderer;
 
+// TODO: send conf structure from main.ts backend on request
 const conf = {
   login: '',
   password: '',
@@ -18,18 +19,42 @@ const conf = {
   headless: true,
   hideAfterLogin: false,
   showDevTools: false,
-  detectionTimeout: 0,
-  minimumCacheTime: 0,
+  detectionTimeout: 10000,
+  minimumCacheTime: 60000,
+  parserPathTimestamp: '',
+  parserPathPersons: '',
+  parserPathMyData: '',
+  parserPathPersonId: '',
+  parserPathPersonPhotoUrl: '',
+  parserPathPersonFullName: '',
+  parserPathPersonShortName: '',
+  parserPathPersonLocationData: '',
+  parserPathLocationDataLongitude: '',
+  parserPathLocationDataLatitude: '',
+  parserPathLocationDataTimestamp: '',
+  parserPathLocationDataAddress: '',
+  parserPathLocationDataCountry: '',
 };
 
-function addLog(text: string): void {
+function addLog(type: string, content?: string): void {
   const log = document.getElementById('log');
-  log.innerHTML += text;
+  let insertHTML = '';
+  insertHTML += '<div class ="log-item">';
+  insertHTML += '<div class ="log-type type-' + type + '">' + type + '</div>';
+  if (content != null) {
+    insertHTML += '<div class ="log-content content-' + type;
+    if (content.startsWith('//')) {
+      insertHTML += ' comment';
+    }
+    insertHTML += '">' + content + '</div>';
+  }
+  insertHTML += '</div>';
+  log.innerHTML += insertHTML;
   log.scrollIntoView({ block: 'end', inline: 'end' });
 }
 
 ipc.on('rendererAction', function (_event: unknown, data: { type: string; text?: string; data?: unknown }) {
-  addLog('<br>' + data.type + (data.text ? ': ' + data.text : ''));
+  addLog(data.type, data.text);
 });
 
 document.getElementById('gomshal-constructor')
