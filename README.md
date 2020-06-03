@@ -1,10 +1,10 @@
 # gomshal
 
- Extracts Shared locations from Google Maps to json object *(replacement for official missing api for shared location)* as node.js library. As this is not an official api, it requires to log in to a google account with a **username and password**. 👨‍👩‍👧‍👦 🔎 🌍
+ Extracts Shared locations from Google Maps 👨‍👩‍👧‍👦 🔎 🌍 to JSON for Node.js. There is not an official api for Shared locations by Google, so it requires full **username and password** for Google account.
 
 ## Install
 
-🔽 Download using npm: `npm install gomshal --save`
+💾 Download using npm: `npm install gomshal --save`
 
 ### Npm ignore scripts flag
 
@@ -14,10 +14,22 @@ If you have set `npm config get ignore-scripts` to true, you will not be able to
 
 ## Usage
 
-👅 Typescript
+🔧 Typescript minimal usage sample (if credentials are already set)
 
 ```typescript
-import { Gomshal, GomshalConfiguration, GomshalState, GomshalInputs } from 'gomshal';
+import { Gomshal } from 'gomshal';
+
+const gomshal: Gomshal = new Gomshal();
+gomshal.initialize();
+gomshal.onSharedLocations(console.log);
+```
+
+🔧 Typescript
+
+<!-- TODO: fix full example -->
+
+```typescript
+import { Gomshal, GomshalConfiguration, GomshalWaitingFor, GomshalInputs } from 'gomshal';
 
 async main() {
   // create new instance
@@ -61,21 +73,23 @@ main();
 
 ## Demo
 
-👀 There is an [Electron](<https://www.electronjs.org/>) demo inside this monorepo. You can run it using this steps:
+💻 There is an beautifull 🌈 [Electron](<https://www.electronjs.org/>) demo inside this monorepo. You can run it using this steps:
 
 - clone this repository `git clone https://github.com/atiris/gomshal.git`,
-- open it `cd gomshal` and run `npm install`
+- open it `cd gomshal` and run `npm install` (*ignore-scripts npm config must be set to false*)
 - start `npm run demo`
+
+<!-- TODO: Screenshot -->
 
 ## Development
 
-🔽 Clone this repository `git clone https://github.com/atiris/gomshal.git`, `cd gomshal` and run `npm install`.
+💼 Clone this repository `git clone https://github.com/atiris/gomshal.git`, `cd gomshal` and run `npm install`.
 
 ### How does this library work
 
-❓ Since 2020 Google require javascript to log in. So we need full browser support for using Google Maps. For that reason I tried to use a [puppeteer](<https://pptr.dev/>). However, this library has trouble enabling login because Google can effectively identify browser control and declare such a browser unsuitable for login. I use [playwright](<https://playwright.dev/>) instead. This project has a similar focus, and so far allows for automated login.
+❓ Since 2020 Google require javascript to log in. So we need full browser support for using Google Maps (or get cookies in another way). For that reason I tried to use a [puppeteer](<https://pptr.dev/>). However, this library has trouble enabling login because Google can effectively identify browser control and declare such a browser unsuitable for login. Now I use [playwright](<https://playwright.dev/>) instead. This project has a similar focus, and so far allows for automated login without detection from Google.
 
-Dependency instalation: `npm i playwright --save`
+❗️ Dependency instalation: `npm i playwright --save` has tens of megabytes and requires a full browser to run.
 
 ### Windows
 
@@ -85,7 +99,7 @@ It may be necessary to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` i
 
 ### Npm
 
-Build: `tsc` and then run for:
+Build: `tsc -p tsconfig.lib.json` and then run for:
 Initial library publishing `npm publish`
 Bugfix or patch: `npm version patch`
 New features: `npm version minor`
@@ -93,4 +107,6 @@ Breaking changes: `npm version major`
 
 ## Notes
 
-Based on [node-google-shared-locations](<https://github.com/Vaelek/node-google-shared-locations>) repository. Which I could no longer simply modify without significant modifications in the library architecture.
+📝 I was inspired by the [node-google-shared-locations](<https://github.com/Vaelek/node-google-shared-locations>) repository. I could no longer simply modify this library without significantly affecting the core library architecture, so I created a new one from the very beginning.
+
+Created in Slovakia 🇸🇰
