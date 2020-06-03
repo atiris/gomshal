@@ -3,14 +3,16 @@ export enum GomshalWaitingFor {
   LoginAndPassword = 1,
   TwoFactorConfirmation = 2,
   LocationData = 3,
+  Close = 4,
 }
 
 export enum GomshalError {
   NoError = 0,
-  WrongGoogleMapsSite = 1,
-  MissingLoginOrPassword = 2,
-  WrongAuthentication = 3,
-  NoTwoFactorConfirmation = 4,
-  NoLocationDataDetected = 5,
-  LocationDataParsingError = 6,
+  CanNotLaunchBrowser = 1,
+  WrongGoogleMapsSite = 2,
+  MissingLoginOrPassword = 3,
+  WrongAuthentication = 4,
+  NoTwoFactorConfirmation = 5,
+  NoLocationDataDetected = 6,
+  LocationDataParsingError = 7,
 }

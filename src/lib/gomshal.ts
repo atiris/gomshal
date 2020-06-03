@@ -52,7 +52,8 @@ export class Gomshal {
     this._callback = callback;
   }
 
-  private newSharedLocations(): void {
+  private newSharedLocations(sharedLocations: SharedLocations): void {
+    this._sharedLocations = sharedLocations;
     if (this._callback !== undefined) {
       this._callback(this._sharedLocations);
     }
@@ -63,14 +64,12 @@ export class Gomshal {
     if (customConfiguration !== undefined) {
       this._configuration = { ...defaultConfiguration, ...customConfiguration };
     }
-    // initialize browser
-    if (this._state === GomshalWaitingFor.Initialize
-      && this.browserContext === undefined
-      && this.page === undefined) {
-      await this.openBrowser();
-      await this.openPage();
-    }
+    // initialization steps
     if (this._state === GomshalWaitingFor.Initialize) {
+      if (this.browserContext === undefined && this.page === undefined) {
+        await this.openBrowser();
+        await this.openPage();
+      }
       await this.loadGoogleMapsPage();
       await this.evaluateGoogleMapsLoginState();
     }
@@ -114,6 +113,8 @@ export class Gomshal {
       });
       return true;
     } catch {
+      this._error = GomshalError.CanNotLaunchBrowser;
+      this._state = GomshalWaitingFor.Close;
       return false;
     }
   }
@@ -128,6 +129,8 @@ export class Gomshal {
       }
       return true;
     } catch {
+      this._error = GomshalError.CanNotLaunchBrowser;
+      this._state = GomshalWaitingFor.Close;
       return false;
     }
   }
@@ -137,6 +140,8 @@ export class Gomshal {
       await this.page.goto(this._configuration.googleMapsUrl, { waitUntil: 'domcontentloaded' });
       return true;
     } catch {
+      this._error = GomshalError.WrongGoogleMapsSite;
+      this._state = GomshalWaitingFor.Close;
       return false;
     }
   }
@@ -166,51 +171,71 @@ export class Gomshal {
   private async processSharedLocationBody(response: Response): Promise<boolean> {
     try {
       const body = await response.body();
-      const bodyString = body.toString(undefined, this._configuration.locationSharingResponseSkipStart)
+      const bodyString = body.toString(undefined, this._configuration.locationSharingResponseSkipStartFix)
         .replace(/[\n\r]+/g, '')
         .trim();
       this.processSharedLocationData(bodyString);
       return true;
     } catch {
+      this._error = GomshalError.LocationDataParsingError;
+      this._state = GomshalWaitingFor.Close;
       return false;
+    }
+  }
+
+  private getJsonDataByPath<T>(json: JSON, path: string): T {
+    const result = path.split('.').reduce((object, key) => {
+      return object && object[key];
+    }, json);
+    try {
+      return result as T;
+    } catch {
+      return undefined;
     }
   }
 
   private async processSharedLocationData(sharedLocationString: string): Promise<boolean> {
     try {
+      const data: SharedLocations = { locations: [] };
+
+      data.state = this._state;
       const sharedLocationJson = JSON.parse(sharedLocationString);
-      const timestamp = sharedLocationJson[8];
+      data.timestamp = this.getJsonDataByPath<string>(sharedLocationJson, this._configuration.parserPathTimestamp);
+      data.state = this._state;
 
-      const peoples = sharedLocationJson[0];
-      const firstPerson = peoples[0];
-      const personalData = firstPerson[6]; // alternative firstPerson[0]
-      const firstId = personalData[0];
-      const firstPhoto = personalData[1];
-      const firstNameSurname = personalData[2];
-      const firstNameShort = personalData[3];
-      const locationData = firstPerson[1];
-      const lat = locationData[1][1];
-      const lon = locationData[1][2];
-      const locationTimeStamp = locationData[2];
-      const locationAddress = locationData[4];
-      const locationCountry = locationData[6]; // petrzalka == AT ?
+      // const myData = this.getJsonDataByPath<number>(sharedLocationJson, this._configuration.parserPathMyData);
+      const persons = this.getJsonDataByPath<[JSON]>(sharedLocationJson, '0');
 
-      const myData = sharedLocationJson[9];
+      // go through the persons details and select a informations
+      for (let personIndex = 0; personIndex < persons.length; personIndex++) {
+        const location: SharedLocation = {};
+        const person = persons[personIndex];
+        // personal info
+        location.id = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonId);
+        location.photoUrl = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonPhotoUrl);
+        location.fullName = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonFullName);
+        location.shortName = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonShortName);
+        // location
+        const locationData = this.getJsonDataByPath<JSON>(person, this._configuration.parserPathPersonLocationData);
+        // horizontal - west east
+        location.longitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLongitude);
+        // vertical - north south
+        location.latitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLatitude);
+        location.timestamp = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataTimestamp);
+        location.address = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataAddress);
+        location.country = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataCountry);
 
-      console.log(sharedLocationJson);
-      // console.log(sharedLocationString);
-      this._sharedLocations = {
-        state: this._state,
-        timestamp: (new Date).toISOString(),
-        locations: [{
-          id: (new Date).toISOString(),
-        }],
-      };
-      this.newSharedLocations();
+        // TODO: add extended if required informations only on something changes
+        data.locations.push(location);
+      }
+
+      // console.log(data);
+      this.newSharedLocations(data);
+
       return true;
     } catch {
       this._error = GomshalError.LocationDataParsingError;
-      this._state = GomshalWaitingFor.Initialize;
+      this._state = GomshalWaitingFor.Close;
       return false;
     }
   }
