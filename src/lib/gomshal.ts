@@ -283,7 +283,7 @@ export class Gomshal {
       }
 
       // add owner data
-    const ownerLocationData = this.getJsonDataByPath<JSON>(sharedLocationJson, this._configuration.parserPathOwnerData);
+      const ownerLocationData = this.getJsonDataByPath<JSON>(sharedLocationJson, this._configuration.parserPathOwnerData);
       if (Object.keys(ownerLocationData).length > 0) {
         const entity: GEntity = {};
         entity.photoUrl = this.ownerPhotoUrl;
@@ -393,17 +393,44 @@ export class Gomshal {
         return false;
       }
 
-      await this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout });
+      await this.page.waitForSelector(this._configuration.isLoggedOutSelector, { timeout: this._configuration.detectionTimeout });
+      await this.page.click(this._configuration.isLoggedOutSelector);
+
+      // if logged out, then wait for selector 'li:nth-child(2) div[role="link"]'
+      const elementType: string = await Promise.race([
+        this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout }).then(() => 'input'),
+        this.page.waitForSelector('li:nth-child(2) div[role="link"]', { timeout: this._configuration.detectionTimeout }).then(() => 'button'),
+      ]);
+
+      if (elementType === 'button') {
+        await this.page.click('li:nth-child(2) div[role="link"]');
+        await this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout });
+      }
+
       await this.setInput(this._configuration.loginSelector, this._configuration.login);
-      await this.clickElement(this._configuration.loginNextButtonSelector);
+      await this.page.click(this._configuration.loginNextButtonSelector);
 
       await this.page.waitForSelector(this._configuration.passwordSelector, { timeout: this._configuration.detectionTimeout });
       await this.setInput(this._configuration.passwordSelector, this._configuration.password);
-      await this.clickElement(this._configuration.passwordNextButtonSelector);
 
+      await this.page.click(this._configuration.passwordNextButtonSelector);
+      await Promise.race([
+        this.page.waitForSelector(this._configuration.isLoggedInSelector),
+        this.page.waitForSelector(this._configuration.isLoggedOutSelector),
+      ]);
 
-      // TODO: test and switch for this.updateState(GStep.TwoFactorConfirmation);
-      this.updateState(GStep.LocationData);
+      const pageUrl = this.page.url();
+      if (pageUrl.indexOf('accounts.google.com/signin/v2/challenge') >= 0) {
+        this.updateState(undefined, GError.NoTwoFactorConfirmation);
+        return true;
+      }
+
+      if (pageUrl.indexOf('google.com/maps/') >= 0) {
+        this.updateState(GStep.LocationData);
+        return true;
+      }
+
+      this.updateState(undefined, GError.WrongAuthentication);
       return true;
     } catch {
       this.updateState(GStep.LoginAndPassword, GError.WrongAuthentication);
