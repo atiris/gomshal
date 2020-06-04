@@ -7,6 +7,10 @@ export class Gomshal {
   private browserContext: BrowserContext;
   private page: Page;
 
+  private ownerPhotoUrl: string;
+  private ownerFullName: string;
+  private ownerShortName: string;
+
   private _locationsCallback: (locations: GLocations) => void;
   private _stepCallback: (newStep: GStep, previousStep: GStep) => void;
   private _errorCallback: (error: GError) => void;
@@ -48,6 +52,9 @@ export class Gomshal {
     this._configuration = defaultConfiguration;
     this._step = GStep.Initialize;
     this._error = GError.NoError;
+    this.ownerPhotoUrl = this._configuration.ownerPhotoUrl || '';
+    this.ownerFullName = this._configuration.ownerFullName || '';
+    this.ownerShortName = this._configuration.ownerShortName || '';
   }
 
   public onLocations(callback?: (locations: GLocations) => void): void {
@@ -192,11 +199,20 @@ export class Gomshal {
   private async processResponseData(response: Response): Promise<boolean> {
     try {
       const url = response.url();
-      const urlMatchSubstring = url.indexOf(this._configuration.locationSharingUrlSubstring) >= 0;
-      if (urlMatchSubstring) {
+
+      const urlLocations = url.indexOf(this._configuration.locationSharingUrlSubstring) >= 0;
+      if (urlLocations) {
         await this.processSharedLocationBody(response);
+        return true;
       }
-      return true;
+
+      const urlOwner = url.indexOf(this._configuration.ownerUrlSubstring) >= 0;
+      if (urlOwner) {
+        await this.processOwnerBody(response);
+        return true;
+      }
+
+      return false;
     } catch {
       return false;
     }
@@ -217,6 +233,9 @@ export class Gomshal {
   }
 
   private getJsonDataByPath<T>(json: JSON, path: string): T {
+    if (path === '') {
+      return undefined;
+    }
     const result = path.split('.').reduce((object, key) => {
       return object && object[key];
     }, json);
@@ -260,12 +279,28 @@ export class Gomshal {
         position.country = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataCountry);
 
         entity.position = position;
-
-        // TODO: add extended if required informations only on something changes
         data.entities.push(entity);
       }
 
-      // console.log(data);
+      // add owner data
+    const ownerLocationData = this.getJsonDataByPath<JSON>(sharedLocationJson, this._configuration.parserPathOwnerData);
+      if (Object.keys(ownerLocationData).length > 0) {
+        const entity: GEntity = {};
+        entity.photoUrl = this.ownerPhotoUrl;
+        entity.fullName = this.ownerFullName;
+        entity.shortName = this.ownerShortName;
+        entity.position = {};
+        entity.position.timestamp = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationTimestamp);
+        entity.position.longitude = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationLongitude);
+        entity.position.latitude = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationLatitude);
+        entity.position.address = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationAddress);
+        entity.position.country = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationCountry);
+        data.entities.push(entity);
+      }
+
+      // add extended informations
+      this.extendedLocations(data);
+
       this.newLocations(data);
 
       return true;
@@ -276,6 +311,53 @@ export class Gomshal {
     }
   }
 
+  private extendedLocations(data: GLocations): void {
+    data.timestamp = 'TODO';
+  }
+
+  private async processOwnerBody(response: Response): Promise<boolean> {
+    try {
+      const body = await response.body();
+      const bodyString = body.toString(undefined, this._configuration.ownerResponseSkipStartFix)
+        .replace(/[\n\r]+/g, '')
+        .trim();
+      this.processOwnerData(bodyString);
+      return true;
+    } catch {
+      this.updateState(GStep.Close, GError.LocationDataParsingError);
+      return false;
+    }
+  }
+
+  private async processOwnerData(ownerString: string): Promise<boolean> {
+    try {
+      const ownerJson = JSON.parse(ownerString);
+
+      if (!this.ownerPhotoUrl) {
+        this.ownerPhotoUrl = this.getJsonDataByPath<string>(ownerJson, this._configuration.parserPathOwnerPhotoUrl);
+        this.ownerPhotoUrl = this.fixUrlPrefix(this.ownerPhotoUrl);
+      }
+      if (!this.ownerFullName) {
+        this.ownerFullName = this.getJsonDataByPath<string>(ownerJson, this._configuration.parserPathOwnerFullName);
+      }
+      if (!this.ownerShortName) {
+        this.ownerShortName = this.getJsonDataByPath<string>(ownerJson, this._configuration.parserPathOwnerShortName);
+      }
+
+      return true;
+    } catch {
+      this._error = GError.LocationDataParsingError;
+      this.newStep(GStep.Close);
+      return false;
+    }
+  }
+
+  private fixUrlPrefix(url: string): string {
+    if (!url.startsWith('http')) {
+      url = 'https:' + url;
+    }
+    return url;
+  }
   private async detectLoginState(timeout = 10000): Promise<string> {
     const isLoggedIn = this.page.waitForSelector(this._configuration.isLoggedInSelector, { timeout: timeout })
       .then(() => { return 'isLoggedIn'; })
