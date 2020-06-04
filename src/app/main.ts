@@ -65,7 +65,7 @@ async function gomshalSharedLocations(): Promise<void> {
     const lastLocations = gomshal.locations;
     const lastLocationsText = JSON.stringify(lastLocations);
 
-    win.webContents.send('rendererAction', { type: 'locations', text: lastLocationsText });
+    win.webContents.send('rendererAction', { type: 'log', text: lastLocationsText });
   } else {
     win.webContents.send('rendererAction', { type: 'locations', text: '// no gomshal instance, please call new Gomshal()' });
   }
