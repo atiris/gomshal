@@ -1,7 +1,7 @@
 // electron backend
 import { app, BrowserWindow, ipcMain } from 'electron';
 
-import { Gomshal, GomshalConfiguration, GomshalWaitingFor, SharedLocations } from './../lib';
+import { GConfiguration, GLocations, Gomshal, GStep } from './../lib';
 
 let gomshal: Gomshal;
 let win: BrowserWindow;
@@ -17,7 +17,7 @@ function createWindow(): void {
 
   win.loadFile('index.html');
   win.setMenuBarVisibility(false);
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 function gomshalConstructor(): void {
@@ -25,33 +25,34 @@ function gomshalConstructor(): void {
     win.webContents.send('rendererAction', { type: 'constructor', text: '// gomshal instance already exists, call close first' });
   } else {
     gomshal = new Gomshal();
+    gomshal.onStep((newStep: GStep, oldStep: GStep) => {
+      win.webContents.send('rendererAction', { type: 'step', text: '// gomshal step changed ' + GStep[oldStep] + ' -> ' + GStep[newStep] });
+    });
     win.webContents.send('rendererAction', { type: 'constructor', text: 'gomshal = new Gomshal();' });
   }
 }
 
-async function gomshalInitialize(gConfiguration: GomshalConfiguration): Promise<void> {
+async function gomshalInitialize(gConfiguration: GConfiguration): Promise<void> {
   if (gomshal) {
     if (Object.keys(gConfiguration).length > 0) {
-      win.webContents.send('rendererAction', { type: 'initialize', text: 'const conf: GomshalConfiguration = {...};' });
-      win.webContents.send('rendererAction', { type: 'initialize', text: 'const state: GomshalState = gomshal.initialize(conf);' });
+      win.webContents.send('rendererAction', { type: 'initialize', text: 'conf: GConfiguration = {...};' });
+      win.webContents.send('rendererAction', { type: 'initialize', text: 'step: GStep = gomshal.initialize(conf);' });
     } else {
-      win.webContents.send('rendererAction', { type: 'initialize', text: 'const state = gomshal.initialize();' });
+      win.webContents.send('rendererAction', { type: 'initialize', text: 'step: GStep = gomshal.initialize();' });
     }
 
-    const state: GomshalWaitingFor = await gomshal.initialize(gConfiguration);
-
-    win.webContents.send('rendererAction', { type: 'state', text: 'state === ' + GomshalWaitingFor[state] + ';' });
+    await gomshal.initialize(gConfiguration);
   } else {
     win.webContents.send('rendererAction', { type: 'initialize', text: '// no gomshal instance, please call new Gomshal()' });
   }
 }
 
-function gomshalConfiguration(): GomshalConfiguration {
+function gomshalConfiguration(): GConfiguration {
   if (gomshal) {
     return gomshal.configuration;
   } else {
     const temporary: Gomshal = new Gomshal();
-    const conf: GomshalConfiguration = temporary.configuration;
+    const conf: GConfiguration = temporary.configuration;
     temporary.close();
     return conf;
   }
@@ -59,26 +60,26 @@ function gomshalConfiguration(): GomshalConfiguration {
 
 async function gomshalSharedLocations(): Promise<void> {
   if (gomshal) {
-    win.webContents.send('rendererAction', { type: 'sharedLocations', text: 'lastLocations: SharedLocations = gomshal.sharedLocations;' });
+    win.webContents.send('rendererAction', { type: 'locations', text: 'locations: GLocations = gomshal.locations;' });
 
-    const lastLocations = gomshal.sharedLocations;
+    const lastLocations = gomshal.locations;
     const lastLocationsText = JSON.stringify(lastLocations);
 
-    win.webContents.send('rendererAction', { type: 'lastLocations', text: lastLocationsText });
+    win.webContents.send('rendererAction', { type: 'locations', text: lastLocationsText });
   } else {
-    win.webContents.send('rendererAction', { type: 'sharedLocations', text: '// no gomshal instance, please call new Gomshal()' });
+    win.webContents.send('rendererAction', { type: 'locations', text: '// no gomshal instance, please call new Gomshal()' });
   }
 }
 
-function sharedLocationsToLog(data: SharedLocations): void {
+function locationsToLog(data: GLocations): void {
   let log = '';
   log += ' timestamp: ' + data.timestamp;
-  log += ' state: ' + GomshalWaitingFor[data.state];
+  log += ' state: ' + GStep[data.state];
 
-  for (let personIndex = 0; personIndex < data.locations?.length; personIndex++) {
-    const person = data.locations[personIndex];
-    if (person.address != null) {
-      log += ' | ' + person.fullName + ': ' + person.address;
+  for (let personIndex = 0; personIndex < data.entities?.length; personIndex++) {
+    const entity = data.entities[personIndex];
+    if (entity.position?.address != null) {
+      log += ' | ' + entity.fullName + ': ' + entity.position?.address;
     }
   }
 
@@ -87,20 +88,20 @@ function sharedLocationsToLog(data: SharedLocations): void {
 
 async function gomshalOnSharedLocationsLog(): Promise<void> {
   if (gomshal) {
-    win.webContents.send('rendererAction', { type: 'onSharedLocations', text: 'gomshal.onSharedLocations(console.log);' });
-
-    gomshal.onSharedLocations(sharedLocationsToLog);
+    win.webContents.send('rendererAction', { type: 'onLocations', text: 'gomshal.onLocations(console.log);' });
+    gomshal.onLocations(locationsToLog);
   } else {
-    win.webContents.send('rendererAction', { type: 'onSharedLocations', text: '// no gomshal instance, please call new Gomshal()' });
+    win.webContents.send('rendererAction', { type: 'onLocations', text: '// no gomshal instance, please call new Gomshal()' });
   }
 }
 
 async function gomshalOnSharedLocationsUndefined(): Promise<void> {
   if (gomshal) {
-    win.webContents.send('rendererAction', { type: 'onSharedLocations', text: 'gomshal.onSharedLocations();' });
-    gomshal.onSharedLocations();
+    win.webContents.send('rendererAction', { type: 'onLocations', text: 'gomshal.onLocations();' });
+    gomshal.onLocations();
+    win.webContents.send('rendererAction', { type: 'onLocations', text: '// callback function on new locations removed' });
   } else {
-    win.webContents.send('rendererAction', { type: 'onSharedLocations', text: '// no gomshal instance, please call new Gomshal()' });
+    win.webContents.send('rendererAction', { type: 'onLocations', text: '// no gomshal instance, please call new Gomshal()' });
   }
 }
 
@@ -115,7 +116,7 @@ async function gomshalClose(): Promise<void> {
   }
 }
 
-ipcMain.on('gomshalInitialize', function (_event, gConfiguration: GomshalConfiguration
+ipcMain.on('gomshalInitialize', function (_event, gConfiguration: GConfiguration
 ) {
   gomshalInitialize(gConfiguration);
 });

@@ -42,7 +42,7 @@ h2 {
 .log-type{
   display: inline-block;
   font-weight: bold;
-  width: 160px;
+  width: 130px;
   color: #063b74;
 }
 
@@ -61,7 +61,7 @@ h2 {
 
 textarea.input {
   width: calc(100vw - 100px);
-  height: 3rem;
+  height: 4rem;
 }
 
 .primary {

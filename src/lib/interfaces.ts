@@ -1,4 +1,4 @@
-import { GomshalError, GomshalWaitingFor } from './enums';
+import { GError, GStep } from './enums';
 
 // browser and page configuration
 export const GOOGLE_MAPS_URL = 'https://www.google.com/maps/';
@@ -11,7 +11,6 @@ export const GOOGLE_MAPS_LOGIN_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
 export const GOOGLE_MAPS_PASSWORD_SELECTOR = 'input[type="password"]';
 export const GOOGLE_MAPS_PASSWORD_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
 export const DETECTION_TIMEOUT = 10 * 1000;
-export const MINIMUM_CACHE_TIME = 60 * 1000;
 
 // TODO: extended informations
 // state: moving, standing
@@ -40,30 +39,50 @@ export const PARSER_LOCATION_DATA_TIMESTAMP = '2';
 export const PARSER_LOCATION_DATA_ADDRESS = '4';
 export const PARSER_LOCATION_DATA_COUNTRY = '6';
 
-export interface SharedLocation {
-  id?: string;
+export interface GPosition {
   timestamp?: string;
-  fullName?: string;
-  shortName?: string;
   longitude?: string;
   latitude?: string;
-  photoUrl?: string;
   address?: string;
   country?: string;
 }
 
-export interface SharedLocations {
-  state?: GomshalWaitingFor;
+export interface GStop {
+  duration?: string;
+  position?: GPosition;
+}
+
+export interface GTransfer {
+  duration?: string;
+  speed?: string;
+  distance?: string;
+  from?: GPosition;
+  to?: GPosition;
+  path?: GPosition[];
+}
+
+export interface GEntity {
+  id?: string;
+  fullName?: string;
+  shortName?: string;
+  photoUrl?: string;
+  position?: GPosition;
+  positionHistory?: GPosition[];
+
+}
+
+export interface GLocations {
+  state?: GStep;
   timestamp?: string;
-  error?: GomshalError;
-  locations?: Array<SharedLocation>;
+  error?: GError;
+  entities?: GEntity[];
 }
 
 // TODO: store history and calculate direction and speed
 /**
  * Configuration for browser, page, credentials, parser, extended data
  */
-export interface GomshalConfiguration {
+export interface GConfiguration {
   /**
    * Write only google account login.
    */
@@ -132,7 +151,6 @@ export interface GomshalConfiguration {
    * Default detection timeout for any web request.
    */
   detectionTimeout?: number;
-  minimumCacheTime?: number;
   parserPathTimestamp?: string;
   parserPathPersons?: string;
   parserPathMyData?: string;
@@ -148,7 +166,7 @@ export interface GomshalConfiguration {
   parserPathLocationDataCountry?: string;
 }
 
-export const defaultConfiguration: GomshalConfiguration = {
+export const defaultConfiguration: GConfiguration = {
   googleMapsUrl: GOOGLE_MAPS_URL,
   locationSharingUrlSubstring: GOOGLE_MAPS_LOCATION_SHARING_URL_SUBSTRING,
   locationSharingResponseSkipStartFix: GOOGLE_MAPS_RESPONSE_SKIP_START_FIX,
@@ -162,7 +180,6 @@ export const defaultConfiguration: GomshalConfiguration = {
   hideAfterLogin: false,
   showDevTools: false,
   detectionTimeout: DETECTION_TIMEOUT,
-  minimumCacheTime: MINIMUM_CACHE_TIME,
   parserPathTimestamp: PARSER_TIMESTAMP,
   parserPathPersons: PARSER_PERSONS,
   parserPathMyData: PARSER_MY_DATA,

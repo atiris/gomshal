@@ -1,4 +1,4 @@
-export enum GomshalWaitingFor {
+export enum GStep {
   Initialize = 0,
   LoginAndPassword = 1,
   TwoFactorConfirmation = 2,
@@ -6,7 +6,7 @@ export enum GomshalWaitingFor {
   Close = 4,
 }
 
-export enum GomshalError {
+export enum GError {
   NoError = 0,
   CanNotLaunchBrowser = 1,
   WrongGoogleMapsSite = 2,

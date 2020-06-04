@@ -1,16 +1,18 @@
 import { BrowserContext, firefox, Page, Response } from 'playwright';
 
-import { defaultConfiguration, GomshalConfiguration, SharedLocation, SharedLocations } from './interfaces';
-import { GomshalError, GomshalWaitingFor } from './enums';
+import { defaultConfiguration, GConfiguration, GEntity, GLocations, GPosition } from './interfaces';
+import { GError, GStep } from './enums';
 
 export class Gomshal {
   private browserContext: BrowserContext;
   private page: Page;
 
-  private _callback: (data: SharedLocations) => void;
+  private _locationsCallback: (locations: GLocations) => void;
+  private _stepCallback: (newStep: GStep, previousStep: GStep) => void;
+  private _errorCallback: (error: GError) => void;
 
-  private _configuration: GomshalConfiguration;
-  public get configuration(): GomshalConfiguration {
+  private _configuration: GConfiguration;
+  public get configuration(): GConfiguration {
     return {
       ...this._configuration,
       ...{
@@ -22,50 +24,85 @@ export class Gomshal {
     };
   }
 
-  private _state: GomshalWaitingFor;
-  public get state(): GomshalWaitingFor {
-    return this._state;
+  private _step: GStep;
+  public get activeStep(): GStep {
+    return this._step;
   }
 
-  private _error: GomshalError;
-  public get error(): GomshalError {
+  private _error: GError;
+  public get error(): GError {
     return this._error;
   }
 
-  private _locations: SharedLocation[];
-  public get locations(): SharedLocation[] {
-    return this._locations;
+  private _entities: GEntity[];
+  public get entities(): GEntity[] {
+    return this._entities;
   }
 
-  private _sharedLocations: SharedLocations;
-  public get sharedLocations(): SharedLocations {
-    return this._sharedLocations;
+  private _locations: GLocations;
+  public get locations(): GLocations {
+    return this._locations;
   }
 
   public constructor() {
     this._configuration = defaultConfiguration;
-    this._state = GomshalWaitingFor.Initialize;
-    this._error = GomshalError.NoError;
+    this._step = GStep.Initialize;
+    this._error = GError.NoError;
   }
 
-  public async onSharedLocations(callback?: (data: SharedLocations) => void): Promise<void> {
-    this._callback = callback;
+  public onLocations(callback?: (locations: GLocations) => void): void {
+    this._locationsCallback = callback;
   }
 
-  private newSharedLocations(sharedLocations: SharedLocations): void {
-    this._sharedLocations = sharedLocations;
-    if (this._callback !== undefined) {
-      this._callback(this._sharedLocations);
+  private newLocations(locations: GLocations): void {
+    this._locations = locations;
+    if (this._locationsCallback !== undefined) {
+      this._locationsCallback(this._locations);
     }
   }
 
-  public async initialize(customConfiguration?: GomshalConfiguration): Promise<GomshalWaitingFor> {
+  public onStep(callback?: (newStep: GStep, previousStep: GStep) => void): void {
+    this._stepCallback = callback;
+  }
+
+  private newStep(step: GStep): void {
+    const previousStep = this._step;
+    if (previousStep === step) { return; }
+    this._step = step;
+    if (this._stepCallback !== undefined) {
+      this._stepCallback(step, previousStep);
+    }
+  }
+
+  public onError(callback?: (error: GError) => void): void {
+    this._errorCallback = callback;
+  }
+
+  private updateState(step?: GStep, error?: GError): void {
+    if (step != null) {
+      this.newStep(step);
+    }
+    if (error != null) {
+      this.newError(error);
+    }
+  }
+
+  private newError(error: GError): void {
+    const previousError = this._error;
+    if (previousError === error) { return; }
+    this._error = error;
+    if (this._errorCallback !== undefined) {
+      this._errorCallback(error);
+    }
+  }
+
+  public async initialize(customConfiguration?: GConfiguration): Promise<GStep> {
     // update configuration if new configuration is set as input argument
     if (customConfiguration !== undefined) {
       this._configuration = { ...defaultConfiguration, ...customConfiguration };
     }
     // initialization steps
-    if (this._state === GomshalWaitingFor.Initialize) {
+    if (this._step === GStep.Initialize) {
       if (this.browserContext === undefined && this.page === undefined) {
         await this.openBrowser();
         await this.openPage();
@@ -73,17 +110,17 @@ export class Gomshal {
       await this.loadGoogleMapsPage();
       await this.evaluateGoogleMapsLoginState();
     }
-    if (this._state === GomshalWaitingFor.LoginAndPassword) {
+    if (this._step === GStep.LoginAndPassword) {
       await this.login();
     }
-    if (this._state === GomshalWaitingFor.TwoFactorConfirmation) {
+    if (this._step === GStep.TwoFactorConfirmation) {
       await this.login();
     }
-    if (this._state === GomshalWaitingFor.LocationData) {
+    if (this._step === GStep.LocationData) {
       await this.subscribeForSharedLocationResponse();
     }
 
-    return this._state;
+    return this._step;
 
     // if injection is needed, this piece of code contains the part where
     // the shared position is processed. The data are in the parameter `d.hG`
@@ -99,10 +136,10 @@ export class Gomshal {
   }
 
   public async createSharedLocations(): Promise<void> {
-    this._sharedLocations = {
-      ...{ state: this._state, timestamp: (new Date).toISOString() },
-      ...(this._locations === undefined ? {} : { locations: this._locations }),
-      ...(this._error === GomshalError.NoError ? {} : { error: this._error }),
+    this._locations = {
+      ...{ state: this._step, timestamp: (new Date).toISOString() },
+      ...(this._entities === undefined ? {} : { entities: this._entities }),
+      ...(this._error === GError.NoError ? {} : { error: this._error }),
     };
   }
 
@@ -113,8 +150,7 @@ export class Gomshal {
       });
       return true;
     } catch {
-      this._error = GomshalError.CanNotLaunchBrowser;
-      this._state = GomshalWaitingFor.Close;
+      this.updateState(GStep.Close, GError.CanNotLaunchBrowser);
       return false;
     }
   }
@@ -129,8 +165,7 @@ export class Gomshal {
       }
       return true;
     } catch {
-      this._error = GomshalError.CanNotLaunchBrowser;
-      this._state = GomshalWaitingFor.Close;
+      this.updateState(GStep.Close, GError.CanNotLaunchBrowser);
       return false;
     }
   }
@@ -140,8 +175,7 @@ export class Gomshal {
       await this.page.goto(this._configuration.googleMapsUrl, { waitUntil: 'domcontentloaded' });
       return true;
     } catch {
-      this._error = GomshalError.WrongGoogleMapsSite;
-      this._state = GomshalWaitingFor.Close;
+      this.updateState(GStep.Close, GError.WrongGoogleMapsSite);
       return false;
     }
   }
@@ -177,8 +211,7 @@ export class Gomshal {
       this.processSharedLocationData(bodyString);
       return true;
     } catch {
-      this._error = GomshalError.LocationDataParsingError;
-      this._state = GomshalWaitingFor.Close;
+      this.updateState(GStep.Close, GError.LocationDataParsingError);
       return false;
     }
   }
@@ -196,46 +229,49 @@ export class Gomshal {
 
   private async processSharedLocationData(sharedLocationString: string): Promise<boolean> {
     try {
-      const data: SharedLocations = { locations: [] };
+      const data: GLocations = { entities: [] };
 
-      data.state = this._state;
+      data.state = this._step;
       const sharedLocationJson = JSON.parse(sharedLocationString);
       data.timestamp = this.getJsonDataByPath<string>(sharedLocationJson, this._configuration.parserPathTimestamp);
-      data.state = this._state;
+      data.state = this._step;
 
       // const myData = this.getJsonDataByPath<number>(sharedLocationJson, this._configuration.parserPathMyData);
-      const persons = this.getJsonDataByPath<[JSON]>(sharedLocationJson, '0');
+      const entities = this.getJsonDataByPath<[JSON]>(sharedLocationJson, '0');
 
       // go through the persons details and select a informations
-      for (let personIndex = 0; personIndex < persons.length; personIndex++) {
-        const location: SharedLocation = {};
-        const person = persons[personIndex];
+      for (let entityIndex = 0; entityIndex < entities.length; entityIndex++) {
+        const entity: GEntity = {};
+        const person = entities[entityIndex];
         // personal info
-        location.id = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonId);
-        location.photoUrl = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonPhotoUrl);
-        location.fullName = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonFullName);
-        location.shortName = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonShortName);
+        entity.id = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonId);
+        entity.photoUrl = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonPhotoUrl);
+        entity.fullName = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonFullName);
+        entity.shortName = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonShortName);
         // location
         const locationData = this.getJsonDataByPath<JSON>(person, this._configuration.parserPathPersonLocationData);
+        const position: GPosition = {};
         // horizontal - west east
-        location.longitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLongitude);
+        position.longitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLongitude);
         // vertical - north south
-        location.latitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLatitude);
-        location.timestamp = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataTimestamp);
-        location.address = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataAddress);
-        location.country = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataCountry);
+        position.latitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLatitude);
+        position.timestamp = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataTimestamp);
+        position.address = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataAddress);
+        position.country = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataCountry);
+
+        entity.position = position;
 
         // TODO: add extended if required informations only on something changes
-        data.locations.push(location);
+        data.entities.push(entity);
       }
 
       // console.log(data);
-      this.newSharedLocations(data);
+      this.newLocations(data);
 
       return true;
     } catch {
-      this._error = GomshalError.LocationDataParsingError;
-      this._state = GomshalWaitingFor.Close;
+      this._error = GError.LocationDataParsingError;
+      this.newStep(GStep.Close);
       return false;
     }
   }
@@ -256,12 +292,11 @@ export class Gomshal {
     try {
       const first: string = await this.detectLoginState();
       if (first === 'isLoggedIn') {
-        this._state = GomshalWaitingFor.LocationData;
+        this.updateState(GStep.LocationData);
       } else if (first === 'isLoggedOut') {
-        this._state = GomshalWaitingFor.LoginAndPassword;
+        this.updateState(GStep.LoginAndPassword);
       } else if (first === 'noSelectorDetected') {
-        this._error = GomshalError.WrongGoogleMapsSite;
-        this._state = GomshalWaitingFor.Initialize;
+        this.updateState(GStep.Close, GError.WrongGoogleMapsSite);
       }
       return true;
     } catch {
@@ -272,8 +307,7 @@ export class Gomshal {
   private async login(): Promise<boolean> {
     try {
       if (this._configuration.login === undefined || this._configuration.password === undefined) {
-        this._error = GomshalError.MissingLoginOrPassword;
-        this._state = GomshalWaitingFor.LoginAndPassword;
+        this.updateState(GStep.LoginAndPassword, GError.MissingLoginOrPassword);
         return false;
       }
 
@@ -286,12 +320,11 @@ export class Gomshal {
       await this.clickElement(this._configuration.passwordNextButtonSelector);
 
 
-      this._state = GomshalWaitingFor.TwoFactorConfirmation;
-      this._state = GomshalWaitingFor.LocationData;
+      // TODO: test and switch for this.updateState(GStep.TwoFactorConfirmation);
+      this.updateState(GStep.LocationData);
       return true;
     } catch {
-      this._error = GomshalError.WrongAuthentication;
-      this._state = GomshalWaitingFor.LoginAndPassword;
+      this.updateState(GStep.LoginAndPassword, GError.WrongAuthentication);
       return false;
     }
   }
@@ -331,5 +364,6 @@ export class Gomshal {
     if (this.browserContext) {
       await this.browserContext.close();
     }
+    this.updateState(GStep.Initialize, GError.NoError);
   }
 }

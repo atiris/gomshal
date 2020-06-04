@@ -24,12 +24,12 @@ gomshal.initialize();
 gomshal.onSharedLocations(console.log);
 ```
 
-🔧 Typescript
+🔧 Typescript full example of usage
 
 <!-- TODO: fix full example -->
 
 ```typescript
-import { Gomshal, GomshalConfiguration, GomshalWaitingFor, GomshalInputs } from 'gomshal';
+import { Gomshal, GConfiguration, GStep } from 'gomshal';
 
 async main() {
   // create new instance
@@ -39,21 +39,21 @@ async main() {
   // login a password sa zmaze po pouziti
 
   // you can change any configuration parameter if you need
-  const customConfiguration: GomshalConfiguration = {headless: false, showDevTools: true};
+  const customConfiguration: GConfiguration = {headless: false, showDevTools: true};
   // and update configuration (you can skip this to use defaults)
-  const newConfiguration: GomshalConfiguration = gomshal.configuration(customConfiguration);
+  const newConfiguration: GConfiguration = gomshal.configuration(customConfiguration);
   // to get actual configuration you can call configuration withous arguments
-  const actualConfiguration: GomshalConfiguration = gomshal.configuration();
+  const actualConfiguration: GConfiguration = gomshal.configuration();
   // initialize browser with google maps
-  let state: GomshalState = await gomshal.initialize();
-  // if there is any error or login required then state is not GomshalState.Ok
-  if (state === GomshalState.LoginRequired ) {
+  let state: GStep = await gomshal.initialize();
+  // if there is any error or login required then state is not GStep.Ok
+  if (state === GStep.LoginRequired ) {
     // get login and password from user and initialize again
     const inputs: GomshalInputs = {login: 'google@gmail.com', password: 'secret'};
     state = await gomshal.initialize(inputs);
   }
   // if 2FA is required
-  if (state === GomshalState.TwoFactorAuthenticationRequired ) {
+  if (state === GStep.TwoFactorAuthenticationRequired ) {
     // ask the user for confirmation on the phone and try again
     await new Promise(resolve => setTimeout(resolve, 60000));
     state = await gomshal.initialize();
