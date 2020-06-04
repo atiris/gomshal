@@ -35,28 +35,29 @@
             mode</button>
           <button type="button" id="gomshal-configuration-all">show all
             settings</button>
+          <button type="button" id="gomshal-configuration">get
+            gomshal.configuration()</button>
         </div>
         <div style="margin-top: 3px;">
           <button type="button" class="primary"
             id="gomshal-initialize">gomshal.initialize(gConfiguration)</button>
-          <button type="button" id="gomshal-configuration">get
-            gomshal.configuration()</button>
         </div>
-        If response state is not <i>GStep.Ok</i> you can change
-        <i>gInputs</i> and call <i>initialize</i> again.
+        If response state is not <i>GStep.LocationData</i> you can check
+        <i>gomshal.error</i> change
+        <i>gConfiguration</i> and call <i>initialize</i> again.
         <br>
         If 2FA is required, approve login on phone and then call
-        <i>sharedLocations</i> with empty <i>gInputs</i>.
+        <i>initialize</i> with empty <i>gConfiguration</i> input attribute.
       </li>
       <li>
         Get last detected shared locations, set or remove callback when new
         shared locations data detected.<br>
         <button type="button" class="primary"
-          id="gomshal-shared-locations">gomshal.sharedLocations()</button>
+          id="gomshal-shared-locations">gomshal.locations()</button>
         <button type="button" class="primary"
-          id="gomshal-on-shared-locations-log">gomshal.onSharedLocations(console.log)</button>
+          id="gomshal-on-shared-locations-log">gomshal.onLocations(console.log)</button>
         <button type="button"
-          id="gomshal-on-shared-locations-undefined">gomshal.onSharedLocations()</button>
+          id="gomshal-on-shared-locations-undefined">gomshal.onLocations()</button>
       </li>
       <li>
         Close GoogleMaps page and browser <i>gomshal.close()</i> and set

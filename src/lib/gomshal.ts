@@ -135,7 +135,7 @@ export class Gomshal {
     //         var h = d.hG[g];
   }
 
-  public async createSharedLocations(): Promise<void> {
+  public async createLocations(): Promise<void> {
     this._locations = {
       ...{ state: this._step, timestamp: (new Date).toISOString() },
       ...(this._entities === undefined ? {} : { entities: this._entities }),
