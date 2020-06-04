@@ -1,7 +1,7 @@
 // electron backend
 import { app, BrowserWindow, ipcMain } from 'electron';
 
-import { GConfiguration, GLocations, Gomshal, GStep } from './../lib';
+import { GConfiguration, GError, GLocations, Gomshal, GStep } from './../lib';
 
 let gomshal: Gomshal;
 let win: BrowserWindow;
@@ -27,6 +27,9 @@ function gomshalConstructor(): void {
     gomshal = new Gomshal();
     gomshal.onStep((newStep: GStep, oldStep: GStep) => {
       win.webContents.send('rendererAction', { type: 'step', text: '// gomshal step changed ' + GStep[oldStep] + ' -> ' + GStep[newStep] });
+    });
+    gomshal.onError((newError) => {
+      win.webContents.send('rendererAction', { type: 'error', text: '// gomshal error ' + GError[newError] });
     });
     win.webContents.send('rendererAction', { type: 'constructor', text: 'gomshal = new Gomshal();' });
   }

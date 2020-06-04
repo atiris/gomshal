@@ -5,7 +5,7 @@ const ipc = require('electron').ipcRenderer;
 
 // TODO: send conf structure from main.ts backend on request
 const conf = {
-  login: '',
+  name: '',
   password: '',
   googleMapsUrl: '',
   locationSharingUrlSubstring: '',
@@ -69,7 +69,7 @@ document.getElementById('gomshal-configuration-empty')
 
 document.getElementById('gomshal-configuration-login-password')
   .addEventListener('click', () => {
-    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = '{"login":"","password":""}';
+    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = '{"name":"","password":""}';
   });
 
 document.getElementById('gomshal-configuration-visible-devtools')

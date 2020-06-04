@@ -20,8 +20,8 @@ export class Gomshal {
     return {
       ...this._configuration,
       ...{
-        login: undefined,
-        loginSet: this._configuration.login !== undefined,
+        name: undefined,
+        loginSet: this._configuration.name !== undefined,
         password: undefined,
         passwordSet: this._configuration.password !== undefined,
       },
@@ -255,26 +255,25 @@ export class Gomshal {
       data.timestamp = this.getJsonDataByPath<string>(sharedLocationJson, this._configuration.parserPathTimestamp);
       data.state = this._step;
 
-      // const myData = this.getJsonDataByPath<number>(sharedLocationJson, this._configuration.parserPathMyData);
       const entities = this.getJsonDataByPath<[JSON]>(sharedLocationJson, '0');
 
       // go through the persons details and select a informations
       for (let entityIndex = 0; entityIndex < entities.length; entityIndex++) {
         const entity: GEntity = {};
         const person = entities[entityIndex];
+
         // personal info
         entity.id = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonId);
         entity.photoUrl = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonPhotoUrl);
         entity.fullName = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonFullName);
         entity.shortName = this.getJsonDataByPath<string>(person, this._configuration.parserPathPersonShortName);
+
         // location
         const locationData = this.getJsonDataByPath<JSON>(person, this._configuration.parserPathPersonLocationData);
         const position: GPosition = {};
-        // horizontal - west east
         position.longitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLongitude);
-        // vertical - north south
         position.latitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLatitude);
-        position.timestamp = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataTimestamp);
+        position.timestamp = this.getJsonDataByPath<number>(locationData, this._configuration.parserPathLocationDataTimestamp);
         position.address = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataAddress);
         position.country = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataCountry);
 
@@ -290,7 +289,7 @@ export class Gomshal {
         entity.fullName = this.ownerFullName;
         entity.shortName = this.ownerShortName;
         entity.position = {};
-        entity.position.timestamp = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationTimestamp);
+        entity.position.timestamp = this.getJsonDataByPath<number>(ownerLocationData, this._configuration.parserPathOwnerLocationTimestamp);
         entity.position.longitude = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationLongitude);
         entity.position.latitude = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationLatitude);
         entity.position.address = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationAddress);
@@ -299,20 +298,28 @@ export class Gomshal {
       }
 
       // add extended informations
-      this.extendedLocations(data);
+      this.extendLocations(data);
 
       this.newLocations(data);
 
       return true;
     } catch {
-      this._error = GError.LocationDataParsingError;
-      this.newStep(GStep.Close);
+      this.updateState(GStep.Close, GError.LocationDataParsingError);
       return false;
     }
   }
 
-  private extendedLocations(data: GLocations): void {
-    data.timestamp = 'TODO';
+  // TODO: no extended data yet
+  private extendLocations(data: GLocations): void {
+    if (this._configuration.extended && this._locations) {
+      for (let entityIndex = 0; entityIndex < data.entities.length; entityIndex++) {
+        const entity = data.entities[entityIndex];
+        // TODO: store historical data in class and create new instance of glocations if needed
+        entity.positionHistory.push(entity.position);
+        entity.positionHistory = entity.positionHistory.filter(position => (position.timestamp > (Date.now() - 60000 * this._configuration.extendedLocationsHistoryForMinutes)));
+      }
+      data.entities;
+    }
   }
 
   private async processOwnerBody(response: Response): Promise<boolean> {
@@ -346,8 +353,7 @@ export class Gomshal {
 
       return true;
     } catch {
-      this._error = GError.LocationDataParsingError;
-      this.newStep(GStep.Close);
+      this.updateState(GStep.Close, GError.LocationDataParsingError);
       return false;
     }
   }
@@ -359,10 +365,10 @@ export class Gomshal {
     return url;
   }
   private async detectLoginState(timeout = 10000): Promise<string> {
-    const isLoggedIn = this.page.waitForSelector(this._configuration.isLoggedInSelector, { timeout: timeout })
+    const isLoggedIn = this.page.waitForSelector(this._configuration.logoutButtonSelector, { timeout: timeout })
       .then(() => { return 'isLoggedIn'; })
       .catch(() => 'noSelectorDetected');
-    const isLoggedOut = this.page.waitForSelector(this._configuration.isLoggedOutSelector, { timeout: timeout })
+    const isLoggedOut = this.page.waitForSelector(this._configuration.loginButtonSelector, { timeout: timeout })
       .then(() => { return 'isLoggedOut'; })
       .catch(() => 'noSelectorDetected');
 
@@ -388,44 +394,44 @@ export class Gomshal {
 
   private async login(): Promise<boolean> {
     try {
-      if (this._configuration.login === undefined || this._configuration.password === undefined) {
+      if (this._configuration.name === undefined || this._configuration.password === undefined) {
         this.updateState(GStep.LoginAndPassword, GError.MissingLoginOrPassword);
         return false;
       }
 
-      await this.page.waitForSelector(this._configuration.isLoggedOutSelector, { timeout: this._configuration.detectionTimeout });
-      await this.page.click(this._configuration.isLoggedOutSelector);
+      await this.page.waitForSelector(this._configuration.loginButtonSelector, { timeout: this._configuration.detectionTimeout });
+      await this.page.click(this._configuration.loginButtonSelector);
 
-      // if logged out, then wait for selector 'li:nth-child(2) div[role="link"]'
+      // on login form we can see input selector for usename or button for "another username", first wins
       const elementType: string = await Promise.race([
-        this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout }).then(() => 'input'),
-        this.page.waitForSelector('li:nth-child(2) div[role="link"]', { timeout: this._configuration.detectionTimeout }).then(() => 'button'),
+        this.page.waitForSelector(this._configuration.googleAccountEmailInputSelector, { timeout: this._configuration.detectionTimeout }).then(() => 'input'),
+        this.page.waitForSelector(this._configuration.googleAccountUseAnotherAccountButtonSelector, { timeout: this._configuration.detectionTimeout }).then(() => 'button'),
       ]);
 
       if (elementType === 'button') {
-        await this.page.click('li:nth-child(2) div[role="link"]');
-        await this.page.waitForSelector(this._configuration.loginSelector, { timeout: this._configuration.detectionTimeout });
+        await this.page.click(this._configuration.googleAccountUseAnotherAccountButtonSelector);
+        await this.page.waitForSelector(this._configuration.googleAccountEmailInputSelector, { timeout: this._configuration.detectionTimeout });
       }
 
-      await this.setInput(this._configuration.loginSelector, this._configuration.login);
-      await this.page.click(this._configuration.loginNextButtonSelector);
+      await this.setInput(this._configuration.googleAccountEmailInputSelector, this._configuration.name);
+      await this.page.click(this._configuration.googleAccountEmailNextButtonSelector);
 
-      await this.page.waitForSelector(this._configuration.passwordSelector, { timeout: this._configuration.detectionTimeout });
-      await this.setInput(this._configuration.passwordSelector, this._configuration.password);
+      await this.page.waitForSelector(this._configuration.googleAccountPasswordInputSelector, { timeout: this._configuration.detectionTimeout });
+      await this.setInput(this._configuration.googleAccountPasswordInputSelector, this._configuration.password);
 
-      await this.page.click(this._configuration.passwordNextButtonSelector);
+      await this.page.click(this._configuration.googleAccountPasswordNextButtonSelector);
       await Promise.race([
-        this.page.waitForSelector(this._configuration.isLoggedInSelector),
-        this.page.waitForSelector(this._configuration.isLoggedOutSelector),
+        this.page.waitForSelector(this._configuration.logoutButtonSelector),
+        this.page.waitForSelector(this._configuration.loginButtonSelector),
       ]);
 
       const pageUrl = this.page.url();
-      if (pageUrl.indexOf('accounts.google.com/signin/v2/challenge') >= 0) {
+      if (pageUrl.indexOf(this._configuration.googleAccountTwoFactorWaitingUrlSubstring) >= 0) {
         this.updateState(undefined, GError.NoTwoFactorConfirmation);
         return true;
       }
 
-      if (pageUrl.indexOf('google.com/maps/') >= 0) {
+      if (pageUrl.indexOf(this._configuration.googleMapsLoadedUrlSubstring) >= 0) {
         this.updateState(GStep.LocationData);
         return true;
       }
@@ -442,7 +448,6 @@ export class Gomshal {
     if (!value) { return; }
     await this.page.evaluate((data) => {
       const element = document.querySelector(data.selector);
-      console.log('setting value for: ' + data.selector, element);
       if (element && (element instanceof HTMLInputElement)) {
         (element as HTMLInputElement).value = data.value;
         // trigger change event
@@ -452,18 +457,8 @@ export class Gomshal {
         });
         element.dispatchEvent(event);
         element.focus();
-        // element.select();
       }
     }, { selector: selector, value: value });
-  }
-
-  private async clickElement(selector: string): Promise<void> {
-    await this.page.evaluate((data) => {
-      const element = document.querySelector(data.selector) as HTMLElement;
-      if (element) {
-        element.click();
-      }
-    }, { selector: selector });
   }
 
   public async close(): Promise<void> {
