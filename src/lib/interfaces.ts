@@ -18,6 +18,7 @@ const GOOGLE_ACCOUNT_PASSWORD_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
 const GOOGLE_ACCOUNT_TWO_FACTOR_WAITING_URL_SUBSTRING = 'accounts.google.com/signin/v2/challenge';
 
 const DETECTION_TIMEOUT = 10 * 1000;
+const IGNORE_POSITION_CHANGE_LESS_THAN_METERS = 50;
 
 // TODO: extended informations
 // state: moving, standing
@@ -199,6 +200,10 @@ export interface GConfiguration {
    */
   detectionTimeout?: number;
   /**
+   * Ignore any movement if changed position is closer than this number of meters.
+   */
+  ignorePositionChangeLessThan?: number;
+  /**
    * If gomshal should calculate and collect additional information, enter true.
    */
   extended?: boolean;
@@ -316,6 +321,7 @@ export const defaultConfiguration: GConfiguration = {
   hideAfterLogin: false,
   showDevTools: false,
   detectionTimeout: DETECTION_TIMEOUT,
+  ignorePositionChangeLessThan: IGNORE_POSITION_CHANGE_LESS_THAN_METERS,
   extended: EXTENDED,
   extendedLocationsHistoryForMinutes: EXTENDED_LOCATIONS_HISTORY_FOR_MINUTES,
   parserPathTimestamp: PARSER_TIMESTAMP,
