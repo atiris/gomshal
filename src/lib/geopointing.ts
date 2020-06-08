@@ -92,7 +92,7 @@ export class Geopointing {
    */
   static azimuthToDirection(azimuth: number, directions: string[] = this.defaultDicrectionConversion): string {
     const angular = 360 / directions.length;
-    return [...directions, ...directions[0]][Math.round((azimuth % 360) / angular)];
+    return [...directions, directions[0]][Math.round((azimuth % 360) / angular)];
   }
 
   /**
