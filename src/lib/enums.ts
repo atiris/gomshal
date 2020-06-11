@@ -1,3 +1,6 @@
+/**
+ * Indicates a step that can be performed next.
+ */
 export enum GStep {
   Initialize = 0,
   LoginAndPassword = 1,
@@ -6,6 +9,9 @@ export enum GStep {
   Close = 4,
 }
 
+/**
+ * Error codes for initialization and location detecting.
+ */
 export enum GError {
   NoError = 0,
   CanNotLaunchBrowser = 1,

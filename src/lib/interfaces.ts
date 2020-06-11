@@ -55,6 +55,17 @@ const PARSER_OWNER_LOCATION_LATITUDE = '1.1.2';
 const PARSER_OWNER_LOCATION_ADDRESS = '1.4';
 const PARSER_OWNER_LOCATION_COUNTRY = '1.6';
 
+export interface GPoint {
+  id?: string;
+  longitude?: string;
+  latitude?: string;
+  radius?: number;
+  inside?: boolean;
+  distance?: number;
+  distanceLastDelta?: number;
+  distanceSmartDelta?: number;
+}
+
 export interface GPosition {
   timestamp?: number;
   longitude?: string;
@@ -84,7 +95,10 @@ export interface GEntity {
   photoUrl?: string;
   position?: GPosition;
   positionHistory?: GPosition[];
-
+  /**
+   * Actual reference of entity to predefined static points.
+   */
+  references?: GPoint[];
 }
 
 export interface GLocations {

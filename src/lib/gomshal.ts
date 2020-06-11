@@ -1,6 +1,6 @@
 import { BrowserContext, firefox, Page, Response } from 'playwright';
 
-import { defaultConfiguration, GConfiguration, GEntity, GLocations, GPosition } from './interfaces';
+import { defaultConfiguration, GConfiguration, GEntity, GLocations, GPoint, GPosition } from './interfaces';
 import { GError, GStep } from './enums';
 
 export class Gomshal {
@@ -26,6 +26,11 @@ export class Gomshal {
         passwordSet: this._configuration.password !== undefined,
       },
     };
+  }
+
+  private _references: GPoint[];
+  public get references(): GPoint[] {
+    return this._references;
   }
 
   private _step: GStep;
@@ -128,18 +133,14 @@ export class Gomshal {
     }
 
     return this._step;
+  }
 
-    // if injection is needed, this piece of code contains the part where
-    // the shared position is processed. The data are in the parameter `d.hG`
-    // var Jxe = function (a, b, c) {
-    //   c = void 0 === c ? 2 : c;
-    //   a.ka || (a.ka = _.ry(a.Ma, {
-    //     callback: b.callback(function () {
-    //       a.ka = null;
-    //       var d = a.T.get();
-    //       a.Na(b);
-    //       for (var f = new _.HK, g = 0; g < d.hG.length; g++) {
-    //         var h = d.hG[g];
+  /**
+   * Set or update reference points
+   * @param references Static points against which to evaluate the distances of individual assessed objects.
+   */
+  public setReferencePoints(references: GPoint[]): void {
+    this._references = references;
   }
 
   public async createLocations(): Promise<void> {
