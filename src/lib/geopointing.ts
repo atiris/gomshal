@@ -1,10 +1,40 @@
-export interface ComplexData {
+export interface GeoData {
+  /**
+   * Distance in selected units.
+   */
   distance: number;
+  /**
+   * Starting azimuth in degrees.
+   */
   azimuth: number;
+  /**
+   * Starting direction.
+   */
   direction: string;
-  speedMS: number;
-  speedKmH: number;
+  /**
+   * Speed in km/h.
+   */
+  speed: number;
 }
+
+export const DEFAULT_DIRECTIONS: string[] = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+
+export const SECOND = 1;
+export const MINUTE = 0.0166666667;
+export const HOUR = 0.000277777778;
+
+export const METER = 1;
+export const KILOMETER = 0.001;
+export const YARD = 1.0936133;
+export const MILE = 0.000621371192;
+
+export const DEGREE = 1;
+export const RADIAN = 0.0174532925;
+
+export const METER_PER_SECOND = 1;
+export const KILOMETER_PER_HOUR = 3.6;
+export const MILE_PER_HOUR = 2.23693629;
+export const FEET_PER_SECOND = 3.2808399;
 
 /**
  * Geopointing library for basic calculations between geological coordinates
@@ -12,7 +42,12 @@ export interface ComplexData {
 export class Geopointing {
   static readonly toRadians = 0.017453292519943295; // degree to radians = degree * Math.PI / 180
   static readonly earthDiameter = 12756274; // Earth diameter in meters
-  static readonly defaultDicrectionConversion: string[] = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+
+  public static timeUnit: number = SECOND;
+  public static distanceUnit: number = METER;
+  public static angleUnit: number = DEGREE;
+  public static speedUnit: number = KILOMETER_PER_HOUR;
+  public static directions: string[] = DEFAULT_DIRECTIONS;
 
   static complexData(
     fromLatitude: number,
@@ -20,8 +55,7 @@ export class Geopointing {
     toLatitude: number,
     toLongitude: number,
     time?: number,
-    directions: string[] = this.defaultDicrectionConversion
-  ): ComplexData {
+  ): GeoData {
     const diffLongitude = this.toRadians * (toLongitude - fromLongitude);
     const fromLatitudeR = this.toRadians * fromLatitude;
     const toLatitudeR = this.toRadians * toLatitude;
@@ -29,25 +63,29 @@ export class Geopointing {
     const distanceSquare = 0.5 - Math.cos(this.toRadians * (toLatitude - fromLatitude)) / 2 +
       Math.cos(fromLatitudeR) * Math.cos(toLatitudeR) * (1 - Math.cos(diffLongitude)) / 2;
 
-    const distance = Math.round(this.earthDiameter * Math.asin(Math.sqrt(distanceSquare)));
+    const distance = this.distanceUnit * this.earthDiameter * Math.asin(Math.sqrt(distanceSquare));
 
     const y = Math.sin(diffLongitude) * Math.cos(toLatitudeR);
     const x = Math.cos(fromLatitudeR) * Math.sin(toLatitudeR) -
       Math.sin(fromLatitudeR) * Math.cos(toLatitudeR) * Math.cos(diffLongitude);
 
-    const azimuth = Math.round((((Math.atan2(y, x)) / this.toRadians) + 360) % 360);
+    const azimuth = this.angleUnit * (((Math.atan2(y, x)) / this.toRadians) + 360) % 360;
 
-    const direction = this.azimuthToDirection(azimuth, directions);
+    const direction = this.azimuthToDirection(azimuth);
 
-    const speedMS = this.speed(distance, time);
-    const speedKmH = this.speedKmH(distance, time);
+    const speed = this.speed(distance, time);
 
-    return { distance: distance, azimuth: azimuth, direction: direction, speedMS: speedMS, speedKmH: speedKmH };
+    return {
+      distance: distance,
+      azimuth: azimuth,
+      direction: direction,
+      speed: speed,
+    };
   }
 
   /**
    * Calculate approximate distance between two points on Earth.
-   * Return distance rounded to meters.
+   * Return distance in specific distance unit.
    * @param fromLatitude latitude coordinate for "from" position
    * @param fromLongitude longitude coordinate for "from" position
    * @param toLatitude latitude coordinate for "to" position
@@ -61,12 +99,12 @@ export class Geopointing {
     const distanceSquare = 0.5 - Math.cos(this.toRadians * (toLatitude - fromLatitude)) / 2 +
       Math.cos(fromLatitudeR) * Math.cos(toLatitudeR) * (1 - Math.cos(diffLongitude)) / 2;
 
-    return Math.round(this.earthDiameter * Math.asin(Math.sqrt(distanceSquare)));
+    return this.distanceUnit * this.earthDiameter * Math.asin(Math.sqrt(distanceSquare));
   }
 
   /**
    * Initial azimuth from input to target coordinates.
-   * Azimuth in degrees.
+   * Azimuth in specific angle unit.
    * @param fromLatitude latitude coordinate for "from" position
    * @param fromLongitude longitude coordinate for "from" position
    * @param toLatitude latitude coordinate for "to" position
@@ -81,40 +119,32 @@ export class Geopointing {
     const x = Math.cos(fromLatitudeR) * Math.sin(toLatitudeR) -
       Math.sin(fromLatitudeR) * Math.cos(toLatitudeR) * Math.cos(diffLongitude);
 
-    return Math.round((((Math.atan2(y, x)) / this.toRadians) + 360) % 360);
+    return this.angleUnit * (((Math.atan2(y, x)) / this.toRadians) + 360) % 360;
   }
 
   /**
    * Convert azimuth to string.
    * If conversion is not set, then the basic compass directions will be used.
-   * @param azimuth Azimuth in degrees
+   * @param azimuth Azimuth in angle units
    * @param directions Any direction conversion array starting from top and continuing clockwise
    */
-  static azimuthToDirection(azimuth: number, directions: string[] = this.defaultDicrectionConversion): string {
-    const angular = 360 / directions.length;
-    return [...directions, directions[0]][Math.round((azimuth % 360) / angular)];
-  }
-
-  /**
-   * Calculate speed in meters per second
-   * @param distance distance in meters
-   * @param time time in seconds
-   */
-  static speed(distance: number, time?: number): number {
-    if (time) {
-      return Math.round(distance / time);
+  static azimuthToDirection(azimuth: number): string {
+    if (this.directions.length < 1) {
+      return '';
     }
-    return 0;
+    const angular = 360 / this.directions.length;
+    return [...this.directions, this.directions[0]][Math.round(((azimuth / this.angleUnit) % 360) / angular)];
   }
 
   /**
-   * Calculate speed in kilometers per hour
-   * @param distance distance in meters
-   * @param time time in seconds
+   * Calculate speed for distance and time and return speed in speed units.
+   * Distance is in defined distance units. Time in time units.
+   * @param distance Distance in distance unit.
+   * @param time Time in time unit.
    */
-  static speedKmH(distance: number, time: number): number {
-    if (time) {
-      return Math.round(3.6 * distance / time);
+  static speed(distance: number, time: number): number {
+    if (distance && time) {
+      return this.speedUnit * (distance / this.distanceUnit) / (time / this.timeUnit);
     }
     return 0;
   }
