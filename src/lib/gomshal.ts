@@ -312,17 +312,18 @@ export class Gomshal {
 
   // TODO: no extended data yet
   private extendLocations(data: GLocations): void {
-    // const previousData: GLocations = (this._locations ? this._locations : data);
-    // const extendedEntities: GEntity[] = previousData.entities;
+    const previousData: GLocations = (this._locations ? this._locations : data);
     if (this._configuration.extended) {
-      for (let entityIndex = 0; entityIndex < data.entities.length; entityIndex++) {
-        const entity = data.entities[entityIndex];
-        // TODO: store historical data in class and create new instance of glocations if needed
-        entity.positionHistory.push(entity.position);
-        entity.positionHistory = entity.positionHistory.filter(position => (position.timestamp > (Date.now() - 60000 * this._configuration.extendedLocationsHistoryForMinutes)));
+      const entities = data.entities;
+      if (entities.length > 0) {
+        for (let entityIndex = 0; entityIndex < data.entities.length; entityIndex++) {
+          const entity = data.entities[entityIndex];
+          const previousEntity = previousData.entities.find(e => e.id === entity.id);
+          if (entity && previousEntity) {
+            entity.history = previousEntity.history;
+          }
+        }
       }
-
-      // data.entities;
     }
   }
 
