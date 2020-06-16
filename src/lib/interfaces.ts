@@ -57,13 +57,41 @@ const PARSER_OWNER_LOCATION_COUNTRY = '1.6';
 
 export interface GPoint {
   id?: string;
+  /**
+   * Address or name of this location point.
+   */
+  locationName?: string;
+  /**
+   * Longitude position of point (horizontal direction - west east).
+   */
   longitude?: string;
+  /**
+   * Latitude position of point (vertical direction - north south).
+   */
   latitude?: string;
+  /**
+   * Radius to assess whether the object is inside the specified point.
+   */
   radius?: number;
+  /**
+   * Whether the object is within this point area.
+   */
   inside?: boolean;
+  /**
+   * Distance in meters to this point.
+   */
   distance?: number;
-  distanceLastDelta?: number;
-  distanceSmartDelta?: number;
+  /**
+   * Speed to this point in km/h.
+   * A positive speed means that the object is approaching a point, negative speed means moving away from point.
+   */
+  speed?: number;
+  /**
+   * Normalized speed to this point in km/h.
+   * Averages the speed for the current route.
+   * A positive speed means that the object is approaching a point, negative speed means moving away from point.
+   */
+  normalizedSpeed?: number;
 }
 
 export interface GPosition {
@@ -74,12 +102,9 @@ export interface GPosition {
   country?: string;
 }
 
-export interface GStop {
-  duration?: string;
-  position?: GPosition;
-}
-
-export interface GTransfer {
+export interface GSegment {
+  timestampFrom?: number;
+  timestampTo?: number;
   duration?: string;
   speed?: string;
   distance?: string;
@@ -94,18 +119,16 @@ export interface GEntity {
   shortName?: string;
   photoUrl?: string;
   position?: GPosition;
-  positionHistory?: GPosition[];
-  /**
-   * Actual reference of entity to predefined static points.
-   */
+  history?: GPosition[];
+  speed?: number;
   references?: GPoint[];
 }
 
 export interface GLocations {
-  state?: GStep;
-  timestamp?: string;
-  error?: GError;
   entities?: GEntity[];
+  timestamp?: string;
+  state?: GStep;
+  error?: GError;
 }
 
 // TODO: store history and calculate direction and speed
