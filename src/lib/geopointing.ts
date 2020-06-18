@@ -1,3 +1,5 @@
+import { GPoint, GPosition } from './interfaces';
+
 export interface GeoData {
   /**
    * Distance in selected units.
@@ -48,6 +50,22 @@ export class Geopointing {
   public static angleUnit: number = DEGREE;
   public static speedUnit: number = KILOMETER_PER_HOUR;
   public static directions: string[] = DEFAULT_DIRECTIONS;
+
+  static complexPointData(
+    fromPosition: GPosition,
+    toPoint: GPoint,
+    time?: number,
+  ): GeoData {
+    return this.complexData(fromPosition.latitude, fromPosition.longitude, toPoint.latitude, toPoint.longitude, time);
+  }
+
+  static complexPositionData(
+    fromPosition: GPosition,
+    toPosition: GPosition,
+    time?: number,
+  ): GeoData {
+    return this.complexData(fromPosition.latitude, fromPosition.longitude, toPosition.latitude, toPosition.longitude, time);
+  }
 
   static complexData(
     fromLatitude: number,

@@ -17,20 +17,14 @@ const GOOGLE_ACCOUNT_PASSWORD_INPUT_SELECTOR = 'input[type="password"]';
 const GOOGLE_ACCOUNT_PASSWORD_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
 const GOOGLE_ACCOUNT_TWO_FACTOR_WAITING_URL_SUBSTRING = 'accounts.google.com/signin/v2/challenge';
 
-const DETECTION_TIMEOUT = 10 * 1000;
-const IGNORE_POSITION_CHANGE_LESS_THAN_METERS = 50;
+const DETECTION_TIMEOUT = 15 * 1000;
+const DISTANCE_FOR_MOVEMENT_MIN_METERS = 50;
 
-// TODO: extended informations
-// state: moving, standing
-// last stop time, position and location
-// history with previous locations
-// direction calculated from samples for last n minutes
+// extended data default values
 const EXTENDED = true;
-const EXTENDED_LOCATIONS_HISTORY_FOR_MINUTES = 60;
-// const EXTENDED_STOPPED_IF_MORE_THAN_MINUTES = 5;
-// const EXTENDED_STOPPED_HISTORY_FOR_MINUTES = 0;
-// const EXTENDED_DIRECTION_CALC_MINIMUM_MINUTES = 0;
-// const EXTENDED_SPEED_CALC_MINIMUM_MINUTES = 0;
+const EXTENDED_LOCATIONS_HISTORY_MIN_MINUTES = 24 * 60;
+const EXTENDED_LOCATIONS_HISTORY_MIN_SEGMENTS = 10;
+const EXTENDED_STOP_MIN_TIME_MINUTES = 5;
 
 // data extract configuration
 const PARSER_TIMESTAMP = '8';
@@ -55,20 +49,26 @@ const PARSER_OWNER_LOCATION_LATITUDE = '1.1.2';
 const PARSER_OWNER_LOCATION_ADDRESS = '1.4';
 const PARSER_OWNER_LOCATION_COUNTRY = '1.6';
 
+/**
+ * Reference point on the map with respect to the current movement.
+ */
 export interface GPoint {
-  id?: string;
   /**
-   * Address or name of this location point.
+   * Any identificator.
    */
-  locationName?: string;
+  id?: string;
   /**
    * Longitude position of point (horizontal direction - west east).
    */
-  longitude?: string;
+  longitude?: number;
   /**
    * Latitude position of point (vertical direction - north south).
    */
-  latitude?: string;
+  latitude?: number;
+  /**
+   * Address or name of this location point.
+   */
+  address?: string;
   /**
    * Radius to assess whether the object is inside the specified point.
    */
@@ -82,45 +82,123 @@ export interface GPoint {
    */
   distance?: number;
   /**
-   * Speed to this point in km/h.
+   * Speed to this point.
    * A positive speed means that the object is approaching a point, negative speed means moving away from point.
    */
   speed?: number;
   /**
-   * Normalized speed to this point in km/h.
-   * Averages the speed for the current route.
+   * Normalized speed to this point.
+   * Averages the speed for the connected route.
    * A positive speed means that the object is approaching a point, negative speed means moving away from point.
    */
   normalizedSpeed?: number;
 }
 
+/**
+ * Detected position.
+ */
 export interface GPosition {
+  /**
+   * Timestamp for this position.
+   */
   timestamp?: number;
-  longitude?: string;
-  latitude?: string;
+  /**
+   * Longitude position of point (horizontal direction - west east).
+   */
+  longitude?: number;
+  /**
+   * Latitude position of point (vertical direction - north south).
+   */
+  latitude?: number;
+  /**
+   * Address or name of this position.
+   */
   address?: string;
+  /**
+   * Country code if is returned by location data.
+   */
   country?: string;
 }
 
+/**
+ * Segment is a path or standing point.
+ */
 export interface GSegment {
+  /**
+   * First timestamp when this segment (standing point or movement) was recorded.
+   */
   timestampFrom?: number;
+  /**
+   * Last timestam for this segment.
+   */
   timestampTo?: number;
+  /**
+   * Duration of this segment.
+   * The time that the monitored object remained in one place or the time that was needed to move.
+   */
   duration?: string;
+  /**
+   * The speed that was achieved within the segment.
+   * In the case of staying in place, the speed will be 0.
+   */
   speed?: string;
+  /**
+   * The distance that was covered within the segment.
+   * If it was a segment capturing the stay in place, the distance will be 0.
+   */
   distance?: string;
-  from?: GPosition;
-  to?: GPosition;
+  /**
+   * Starting point for segment.
+   */
+  positionFrom?: GPosition;
+  /**
+   * Ending point for segment.
+   */
+  positionTo?: GPosition;
+  /**
+   * All detected positions during monitoring this segment.
+   */
   path?: GPosition[];
+  /**
+   * All points where this segment is inside (in point radius).
+   */
+  inside?: GPoint[];
 }
 
+/**
+ * Entity location data.
+ */
 export interface GEntity {
+  /**
+   * Any entity identificator.
+   */
   id?: string;
+  /**
+   * Entity full name.
+   */
   fullName?: string;
+  /**
+   * Entity short name.
+   */
   shortName?: string;
+  /**
+   * URL to entity picture.
+   */
   photoUrl?: string;
+  /**
+   * Last known position.
+   */
   position?: GPosition;
-  history?: GPosition[];
-  speed?: number;
+  /**
+   * Segments are standing points or movements where location of entity was recorded.
+   * The segments are sorted from newest to oldest.
+   * If you want to know last activity, you can get first segement from it.
+   * It can be the point at which the entity occurred for some time, or the route it traveled.
+   */
+  segments?: GSegment[];
+  /**
+   * Current reference to predefined static points and to other watched entities.
+   */
   references?: GPoint[];
 }
 
@@ -131,7 +209,6 @@ export interface GLocations {
   error?: GError;
 }
 
-// TODO: store history and calculate direction and speed
 /**
  * Configuration for browser, page, credentials, parser, extended data
  */
@@ -233,21 +310,29 @@ export interface GConfiguration {
    */
   showDevTools?: boolean;
   /**
-   * Default detection timeout for any web request.
+   * Default detection timeout for any web request in milliseconds.
    */
-  detectionTimeout?: number;
+  requestDetectionTimeout?: number;
   /**
    * Ignore any movement if changed position is closer than this number of meters.
    */
-  ignorePositionChangeLessThan?: number;
+  distanceForMovementMinMeters?: number;
   /**
    * If gomshal should calculate and collect additional information, enter true.
    */
   extended?: boolean;
   /**
-   * Number of minutes that each user's location history can be remembered.
+   * Minimum number of minutes that each user's location history should be stored.
    */
-  extendedLocationsHistoryForMinutes?: number;
+  extendedLocationsHistoryMinMinutes?: number;
+  /**
+   * Minimum number of segments that each user's location history should be stored.
+   */
+  extendedLocationsHistoryMinSegments?: number;
+  /**
+   * If this time is exceeded at one point, the object is already considered stopped.
+   */
+  extendedStopMinTimeMinutes?: number;
   /**
    * Path to timestamp in shared locations JSON response.
    */
@@ -357,10 +442,12 @@ export const defaultConfiguration: GConfiguration = {
   headless: true,
   hideAfterLogin: false,
   showDevTools: false,
-  detectionTimeout: DETECTION_TIMEOUT,
-  ignorePositionChangeLessThan: IGNORE_POSITION_CHANGE_LESS_THAN_METERS,
+  requestDetectionTimeout: DETECTION_TIMEOUT,
+  distanceForMovementMinMeters: DISTANCE_FOR_MOVEMENT_MIN_METERS,
   extended: EXTENDED,
-  extendedLocationsHistoryForMinutes: EXTENDED_LOCATIONS_HISTORY_FOR_MINUTES,
+  extendedLocationsHistoryMinMinutes: EXTENDED_LOCATIONS_HISTORY_MIN_MINUTES,
+  extendedLocationsHistoryMinSegments: EXTENDED_LOCATIONS_HISTORY_MIN_SEGMENTS,
+  extendedStopMinTimeMinutes: EXTENDED_STOP_MIN_TIME_MINUTES,
   parserPathTimestamp: PARSER_TIMESTAMP,
   parserPathPersons: PARSER_PERSONS,
   parserPathPersonId: PARSER_PERSON_ID,

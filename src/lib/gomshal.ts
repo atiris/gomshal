@@ -2,6 +2,7 @@ import { BrowserContext, firefox, Page, Response } from 'playwright';
 
 import { defaultConfiguration, GConfiguration, GEntity, GLocations, GPoint, GPosition } from './interfaces';
 import { GError, GStep } from './enums';
+import { Geopointing } from './geopointing';
 
 export class Gomshal {
   private browserContext: BrowserContext;
@@ -272,8 +273,8 @@ export class Gomshal {
         // location
         const locationData = this.getJsonDataByPath<JSON>(person, this._configuration.parserPathPersonLocationData);
         const position: GPosition = {};
-        position.longitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLongitude);
-        position.latitude = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataLatitude);
+        position.longitude = this.getJsonDataByPath<number>(locationData, this._configuration.parserPathLocationDataLongitude);
+        position.latitude = this.getJsonDataByPath<number>(locationData, this._configuration.parserPathLocationDataLatitude);
         position.timestamp = this.getJsonDataByPath<number>(locationData, this._configuration.parserPathLocationDataTimestamp);
         position.address = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataAddress);
         position.country = this.getJsonDataByPath<string>(locationData, this._configuration.parserPathLocationDataCountry);
@@ -291,8 +292,8 @@ export class Gomshal {
         entity.shortName = this.ownerShortName;
         entity.position = {};
         entity.position.timestamp = this.getJsonDataByPath<number>(ownerLocationData, this._configuration.parserPathOwnerLocationTimestamp);
-        entity.position.longitude = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationLongitude);
-        entity.position.latitude = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationLatitude);
+        entity.position.longitude = this.getJsonDataByPath<number>(ownerLocationData, this._configuration.parserPathOwnerLocationLongitude);
+        entity.position.latitude = this.getJsonDataByPath<number>(ownerLocationData, this._configuration.parserPathOwnerLocationLatitude);
         entity.position.address = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationAddress);
         entity.position.country = this.getJsonDataByPath<string>(ownerLocationData, this._configuration.parserPathOwnerLocationCountry);
         data.entities.push(entity);
@@ -310,7 +311,6 @@ export class Gomshal {
     }
   }
 
-  // TODO: no extended data yet
   private extendLocations(data: GLocations): void {
     const previousData: GLocations = (this._locations ? this._locations : data);
     if (this._configuration.extended) {
@@ -320,7 +320,23 @@ export class Gomshal {
           const entity = data.entities[entityIndex];
           const previousEntity = previousData.entities.find(e => e.id === entity.id);
           if (entity && previousEntity) {
-            entity.history = previousEntity.history;
+            if (entity.position.timestamp !== previousEntity.position.timestamp) {
+              const lastSegment = previousEntity.segments && previousEntity.segments[0];
+              if (lastSegment) {
+                const complexData = Geopointing.complexPositionData(entity.position, lastSegment.positionTo, entity.position.timestamp - lastSegment.timestampTo);
+                if (complexData.distance > this.configuration.distanceForMovementMinMeters) {
+                  lastSegment.positionTo = entity.position;
+                  lastSegment.timestampTo = entity.position.timestamp;
+                  // TODO: calculate path detail and update
+                  lastSegment.path.push(entity.position);
+                } else {
+                  lastSegment.timestampTo = entity.position.timestamp;
+                  // TODO: calculate duration
+                }
+              }
+            } else {
+              entity.segments = previousEntity.segments;
+            }
           }
         }
       }
@@ -404,24 +420,24 @@ export class Gomshal {
         return false;
       }
 
-      await this.page.waitForSelector(this._configuration.loginButtonSelector, { timeout: this._configuration.detectionTimeout });
+      await this.page.waitForSelector(this._configuration.loginButtonSelector, { timeout: this._configuration.requestDetectionTimeout });
       await this.page.click(this._configuration.loginButtonSelector);
 
       // on login form we can see input selector for usename or button for "another username", first wins
       const elementType: string = await Promise.race([
-        this.page.waitForSelector(this._configuration.googleAccountEmailInputSelector, { timeout: this._configuration.detectionTimeout }).then(() => 'input'),
-        this.page.waitForSelector(this._configuration.googleAccountUseAnotherAccountButtonSelector, { timeout: this._configuration.detectionTimeout }).then(() => 'button'),
+        this.page.waitForSelector(this._configuration.googleAccountEmailInputSelector, { timeout: this._configuration.requestDetectionTimeout }).then(() => 'input'),
+        this.page.waitForSelector(this._configuration.googleAccountUseAnotherAccountButtonSelector, { timeout: this._configuration.requestDetectionTimeout }).then(() => 'button'),
       ]);
 
       if (elementType === 'button') {
         await this.page.click(this._configuration.googleAccountUseAnotherAccountButtonSelector);
-        await this.page.waitForSelector(this._configuration.googleAccountEmailInputSelector, { timeout: this._configuration.detectionTimeout });
+        await this.page.waitForSelector(this._configuration.googleAccountEmailInputSelector, { timeout: this._configuration.requestDetectionTimeout });
       }
 
       await this.setInput(this._configuration.googleAccountEmailInputSelector, this._configuration.name);
       await this.page.click(this._configuration.googleAccountEmailNextButtonSelector);
 
-      await this.page.waitForSelector(this._configuration.googleAccountPasswordInputSelector, { timeout: this._configuration.detectionTimeout });
+      await this.page.waitForSelector(this._configuration.googleAccountPasswordInputSelector, { timeout: this._configuration.requestDetectionTimeout });
       await this.setInput(this._configuration.googleAccountPasswordInputSelector, this._configuration.password);
 
       await this.page.click(this._configuration.googleAccountPasswordNextButtonSelector);
