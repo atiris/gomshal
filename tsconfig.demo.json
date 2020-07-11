@@ -1,0 +1,23 @@
+// global tsconfig as union version for library and demo
+{
+  "compilerOptions": {
+    "outDir": "./build/demo",
+    "target": "ES5",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "removeComments": false,
+    "noImplicitAny": false,
+    "suppressImplicitAnyIndexErrors": true,
+  },
+  "exclude": [
+    "./node_modules",
+  ],
+  "include": [
+    "./src/app/*.ts",
+    "./src/lib/*.ts",
+  ],
+}

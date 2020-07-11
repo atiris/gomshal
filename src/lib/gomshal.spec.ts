@@ -1,7 +1,16 @@
-// tslint:disable:no-expression-statement
-import test from 'ava';
-import { loginToGoogleMap } from './gomshal';
+import { expect } from 'chai';
 
-test('loginToGoogleMap return json', t => {
-  t.deepEqual(loginToGoogleMap(), JSON.parse('{"location": true}'));
+import { defaultConfiguration } from './interfaces';
+import { Gomshal } from './gomshal';
+
+describe('gomshal', function () {
+  let g: Gomshal;
+
+  this.beforeAll(() => {
+    g = new Gomshal();
+  });
+
+  it('should get default settings', () => {
+    expect(g.configuration).deep.equal(defaultConfiguration);
+  });
 });
