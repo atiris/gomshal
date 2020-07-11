@@ -6,8 +6,9 @@ export enum GState {
   Initialize = 0,
   LoginAndPassword = 1,
   TwoFactorConfirmation = 2,
-  LocationData = 3,
-  Close = 4,
+  SubscribeForLocations = 3,
+  LocationData = 4,
+  Close = 5,
 }
 
 /**

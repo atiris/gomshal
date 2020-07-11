@@ -112,17 +112,19 @@ export class Gomshal {
   /**
    * Create new location data.
    * @param entities Initial entity list
+   * @param timestamp Specific timestamp
    * @param state Gomshal state
    * @param error Actual error
    */
   public createLocations(
     entities?: GEntity[],
+    timestamp?: string,
     state?: GState,
     error?: GError
   ): GLocations {
     return {
-      timestamp: (new Date).toISOString(),
       ...(entities === undefined ? { entities: [] } : { entities: entities }),
+      ...(timestamp === undefined ? { timestamp: (new Date).toISOString() } : { timestamp: timestamp }),
       ...(state === undefined ? { state: GState.Initialize } : { state: state }),
       ...(error === undefined ? { error: GError.NoError } : { error: error }),
     };
@@ -131,18 +133,20 @@ export class Gomshal {
   /**
    * Create new location from previous locations.
    * @param entities Initial entity list
+   * @param timestamp Specific timestamp
    * @param state Gomshal state
    * @param error Actual error
    */
   public updateLocations(
     locations: GLocations,
     entities?: GEntity[],
+    timestamp?: string,
     state?: GState,
     error?: GError
   ): GLocations {
     return {
-      timestamp: (new Date).toISOString(),
       ...(entities === undefined ? { entities: locations.entities } : { entities: entities }),
+      ...(timestamp === undefined ? { timestamp: locations.timestamp } : { timestamp: timestamp }),
       ...(state === undefined ? { state: locations.state } : { state: state }),
       ...(error === undefined ? { error: locations.error } : { error: error }),
     };
@@ -167,8 +171,11 @@ export class Gomshal {
     if (this._locations.state === GState.TwoFactorConfirmation) {
       await this.login();
     }
-    if (this._locations.state === GState.LocationData) {
+    if (this._locations.state === GState.SubscribeForLocations) {
       await this.subscribeForSharedLocationResponse();
+    }
+    if (this._locations.state === GState.LocationData) {
+      this._locations.error = GError.NoError;
     }
 
     return this._locations.state;
@@ -225,6 +232,7 @@ export class Gomshal {
   private async subscribeForSharedLocationResponse(): Promise<boolean> {
     try {
       this.page.on('response', (data) => { this.processResponseData(data); });
+      this.updateState(GState.LocationData);
       return true;
     } catch {
       return false;
@@ -283,13 +291,11 @@ export class Gomshal {
 
   private processSharedLocationData(sharedLocationString: string): GLocations {
     const oldLocations: GLocations = this._locations;
-    let newLocations: GLocations = this.updateLocations(oldLocations);
 
     try {
-      newLocations.state = this._locations.state;
       const sharedLocationJson = JSON.parse(sharedLocationString);
-      newLocations.timestamp = this.getJsonDataByPath<string>(sharedLocationJson, this._configuration.parserPathTimestamp);
-      newLocations.state = this._locations.state;
+      const timestamp = this.getJsonDataByPath<string>(sharedLocationJson, this._configuration.parserPathTimestamp);
+      const newLocations: GLocations = this.createLocations(undefined, timestamp, this._locations.state, this._locations.error);
 
       const entities = this.getJsonDataByPath<[JSON]>(sharedLocationJson, '0');
 
@@ -334,9 +340,9 @@ export class Gomshal {
       }
 
       // add extended informations
-      newLocations = this.extendLocations(oldLocations, newLocations);
-      this.setLocations(newLocations);
-      return newLocations;
+      const extendedLocations = this.extendLocations(oldLocations, newLocations);
+      this.setLocations(extendedLocations);
+      return extendedLocations;
     } catch {
       this.updateState(GState.Close, GError.LocationDataParsingError);
       return oldLocations;
@@ -434,7 +440,7 @@ export class Gomshal {
     try {
       const first: string = await this.detectLoginState();
       if (first === 'isLoggedIn') {
-        this.updateState(GState.LocationData);
+        this.updateState(GState.SubscribeForLocations);
       } else if (first === 'isLoggedOut') {
         this.updateState(GState.LoginAndPassword);
       } else if (first === 'noSelectorDetected') {
@@ -486,7 +492,7 @@ export class Gomshal {
       }
 
       if (pageUrl.indexOf(this._configuration.googleMapsLoadedUrlSubstring) >= 0) {
-        this.updateState(GState.LocationData);
+        this.updateState(GState.SubscribeForLocations);
         return true;
       }
 
