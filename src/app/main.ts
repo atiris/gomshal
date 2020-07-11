@@ -1,7 +1,7 @@
 // electron backend
 import { app, BrowserWindow, ipcMain } from 'electron';
 
-import { GConfiguration, GError, GLocations, Gomshal, GStep } from './../lib';
+import { GConfiguration, GError, GLocations, Gomshal, GState } from './../lib';
 
 let gomshal: Gomshal;
 let win: BrowserWindow;
@@ -25,12 +25,6 @@ function gomshalConstructor(): void {
     win.webContents.send('rendererAction', { type: 'constructor', text: '// gomshal instance already exists, call close first' });
   } else {
     gomshal = new Gomshal();
-    gomshal.onStep((newStep: GStep, oldStep: GStep) => {
-      win.webContents.send('rendererAction', { type: 'step', text: '// gomshal step changed ' + GStep[oldStep] + ' -> ' + GStep[newStep] });
-    });
-    gomshal.onError((newError) => {
-      win.webContents.send('rendererAction', { type: 'error', text: '// gomshal error ' + GError[newError] });
-    });
     win.webContents.send('rendererAction', { type: 'constructor', text: 'gomshal = new Gomshal();' });
   }
 }
@@ -39,9 +33,9 @@ async function gomshalInitialize(gConfiguration: GConfiguration): Promise<void> 
   if (gomshal) {
     if (Object.keys(gConfiguration).length > 0) {
       win.webContents.send('rendererAction', { type: 'initialize', text: 'conf: GConfiguration = {...};' });
-      win.webContents.send('rendererAction', { type: 'initialize', text: 'step: GStep = gomshal.initialize(conf);' });
+      win.webContents.send('rendererAction', { type: 'initialize', text: 'step: GState = gomshal.initialize(conf);' });
     } else {
-      win.webContents.send('rendererAction', { type: 'initialize', text: 'step: GStep = gomshal.initialize();' });
+      win.webContents.send('rendererAction', { type: 'initialize', text: 'step: GState = gomshal.initialize();' });
     }
 
     await gomshal.initialize(gConfiguration);
@@ -75,18 +69,21 @@ async function gomshalSharedLocations(): Promise<void> {
 }
 
 function locationsToLog(data: GLocations): void {
-  let log = '';
+  let log = '//';
   log += ' timestamp: ' + data.timestamp;
-  log += ' state: ' + GStep[data.state];
+  log += ' | state: ' + GState[data.state];
+  log += ' | error: ' + GError[data.error];
+  win.webContents.send('rendererAction', { type: 'newLocations', text: log.trim() });
 
   for (let personIndex = 0; personIndex < data.entities?.length; personIndex++) {
+    log = '// ';
     const entity = data.entities[personIndex];
     if (entity.position?.address != null) {
-      log += ' | ' + entity.fullName + ': ' + entity.position?.address;
+      log += ' ' + entity.fullName + ': ' + entity.position?.address;
     }
+    win.webContents.send('rendererAction', { type: 'data', text: log.trim() });
   }
 
-  win.webContents.send('rendererAction', { type: 'log', text: log.trim() });
 }
 
 async function gomshalOnSharedLocationsLog(): Promise<void> {

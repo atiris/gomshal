@@ -1,4 +1,4 @@
-import { GError, GStep } from './enums';
+import { GError, GState } from './enums';
 
 // browser and page configuration
 const GOOGLE_MAPS_URL = 'https://www.google.com/maps/';
@@ -203,10 +203,22 @@ export interface GEntity {
 }
 
 export interface GLocations {
-  entities?: GEntity[];
-  timestamp?: string;
-  state?: GStep;
-  error?: GError;
+  /**
+   * List of entities detected by gomshal library.
+   */
+  entities: GEntity[];
+  /**
+   * Timestamp when entities, state or error was changed.
+   */
+  timestamp: string;
+  /**
+   * Actual state of this library (identity of the next step which can be performed).
+   */
+  state: GState;
+  /**
+   * Actual error if location can not be detected.
+   */
+  error: GError;
 }
 
 /**
@@ -216,7 +228,7 @@ export interface GConfiguration {
   /**
    * Write only google account login name - email.
    */
-  name?: string;
+  login?: string;
   /**
    * Write only google account password.
    */
@@ -312,7 +324,7 @@ export interface GConfiguration {
   /**
    * Default detection timeout for any web request in milliseconds.
    */
-  requestDetectionTimeout?: number;
+  detectionTimeout?: number;
   /**
    * Ignore any movement if changed position is closer than this number of meters.
    */
@@ -346,10 +358,6 @@ export interface GConfiguration {
    */
   parserPathPersonId?: string;
   /**
-   * Path how to extract url to person photo from persons JSON.
-   */
-  parserPathPersonPhotoUrl?: string;
-  /**
    * Path how to extract person full name from persons JSON.
    */
   parserPathPersonFullName?: string;
@@ -358,13 +366,13 @@ export interface GConfiguration {
    */
   parserPathPersonShortName?: string;
   /**
+   * Path how to extract url to person photo from persons JSON.
+   */
+  parserPathPersonPhotoUrl?: string;
+  /**
    * Path how to extract location data from person JSON data.
    */
   parserPathPersonLocationData?: string;
-  /**
-   * Path to get owner photo URL (alternative response).
-   */
-  parserPathOwnerPhotoUrl?: string;
   /**
    * Path to get owner full name (alternative response).
    */
@@ -373,6 +381,10 @@ export interface GConfiguration {
    * Path to get owner short name (alternative response).
    */
   parserPathOwnerShortName?: string;
+  /**
+   * Path to get owner photo URL (alternative response).
+   */
+  parserPathOwnerPhotoUrl?: string;
   /**
    * Path to get longitude (horizontal direction - west east) from location data JSON.
    * In this example for central Europe: 48.1234567,17.1234567
@@ -442,7 +454,7 @@ export const defaultConfiguration: GConfiguration = {
   headless: true,
   hideAfterLogin: false,
   showDevTools: false,
-  requestDetectionTimeout: DETECTION_TIMEOUT,
+  detectionTimeout: DETECTION_TIMEOUT,
   distanceForMovementMinMeters: DISTANCE_FOR_MOVEMENT_MIN_METERS,
   extended: EXTENDED,
   extendedLocationsHistoryMinMinutes: EXTENDED_LOCATIONS_HISTORY_MIN_MINUTES,
@@ -451,13 +463,13 @@ export const defaultConfiguration: GConfiguration = {
   parserPathTimestamp: PARSER_TIMESTAMP,
   parserPathPersons: PARSER_PERSONS,
   parserPathPersonId: PARSER_PERSON_ID,
-  parserPathPersonPhotoUrl: PARSER_PERSON_PHOTO_URL,
   parserPathPersonFullName: PARSER_PERSON_FULL_NAME,
   parserPathPersonShortName: PARSER_PERSON_SHORT_NAME,
+  parserPathPersonPhotoUrl: PARSER_PERSON_PHOTO_URL,
   parserPathPersonLocationData: PARSER_PERSON_LOCATION_DATA,
-  parserPathOwnerPhotoUrl: PARSER_OWNER_PHOTO_URL,
   parserPathOwnerFullName: PARSER_OWNER_FULL_NAME,
   parserPathOwnerShortName: PARSER_OWNER_SHORT_NAME,
+  parserPathOwnerPhotoUrl: PARSER_OWNER_PHOTO_URL,
   parserPathLocationDataLongitude: PARSER_LOCATION_DATA_LONGITUDE,
   parserPathLocationDataLatitude: PARSER_LOCATION_DATA_LATITUDE,
   parserPathLocationDataTimestamp: PARSER_LOCATION_DATA_TIMESTAMP,

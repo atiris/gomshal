@@ -40,7 +40,7 @@
           <button type="button" class="primary"
             id="gomshal-initialize">gomshal.initialize(gConfiguration)</button>
         </div>
-        If response state is not <i>GStep.LocationData</i> you can check
+        If response state is not <i>GState.LocationData</i> you can check
         <i>gomshal.error</i> change
         <i>gConfiguration</i> and call <i>initialize</i> again.
         <br>
@@ -48,14 +48,13 @@
         <i>initialize</i> with empty <i>gConfiguration</i> input attribute.
       </li>
       <li>
-        Get last detected shared locations, set or remove callback when new
-        shared locations data detected.<br>
+        Get last shared locations, and set or remove short callback when new locations detected.<br>
         <button type="button" class="primary"
-          id="gomshal-shared-locations">gomshal.locations()</button>
+          id="gomshal-shared-locations">gomshal.locations() // all data</button>
         <button type="button" class="primary"
-          id="gomshal-on-shared-locations-log">gomshal.onLocations(console.log)</button>
+          id="gomshal-on-shared-locations-log">gomshal.onLocations(console.log) // short</button>
         <button type="button"
-          id="gomshal-on-shared-locations-undefined">gomshal.onLocations()</button>
+          id="gomshal-on-shared-locations-undefined">gomshal.onLocations() // remove callback</button>
       </li>
       <li>
         Close GoogleMaps page and browser <i>gomshal.close()</i> and set
