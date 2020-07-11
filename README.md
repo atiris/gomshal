@@ -1,6 +1,6 @@
 # gomshal
 
- Extracts Shared locations from Google Maps 👨‍👩‍👧‍👦 🔎 🌍 to JSON for Node.js. There is not an official api for Shared locations by Google, so it requires full **username and password** for Google account.
+ Extracts Shared locations from Google Maps 🌍 🔎 👨‍👩‍👧‍👦 to JSON for Node.js. There is not an official api for Shared locations by Google, so it requires full **username and password** for Google account.
 
 ## Install
 
@@ -21,54 +21,51 @@ import { Gomshal } from 'gomshal';
 
 const gomshal: Gomshal = new Gomshal();
 gomshal.initialize();
-gomshal.onSharedLocations(console.log);
+gomshal.onLocations(console.log);
 ```
 
-🔧 Typescript full example of usage
-
-<!-- TODO: fix full example -->
+🔧 Typescript full example of usage with custom configuration and callback on new shared locations data detected
 
 ```typescript
-import { Gomshal, GConfiguration, GStep } from 'gomshal';
+import { Gomshal, GConfiguration, GState } from 'gomshal';
 
-async main() {
+async startGomshal() {
   // create new instance
   const gomshal: Gomshal = new Gomshal();
-
-  // zlucit configuration a initialize
-  // login a password sa zmaze po pouziti
-
   // you can change any configuration parameter if you need
   const customConfiguration: GConfiguration = {headless: false, showDevTools: true};
-  // and update configuration (you can skip this to use defaults)
-  const newConfiguration: GConfiguration = gomshal.configuration(customConfiguration);
-  // to get actual configuration you can call configuration withous arguments
-  const actualConfiguration: GConfiguration = gomshal.configuration();
-  // initialize browser with google maps
-  let state: GStep = await gomshal.initialize();
-  // if there is any error or login required then state is not GStep.Ok
-  if (state === GStep.LoginRequired ) {
-    // get login and password from user and initialize again
-    const inputs: GomshalInputs = {login: 'google@gmail.com', password: 'secret'};
-    state = await gomshal.initialize(inputs);
+  // initialize with custom configuration
+  let state: GState = await gomshal.initialize(customConfiguration);
+  // if state is login and password required then do specific steps to get shared locations data
+  if (state === GState.LoginAndPassword ) {
+    // set login and password to configuration and initialize next step
+    const credentialsConfiguration: GConfiguration = {
+      ...customConfiguration,
+      ...{login: 'google@gmail.com', password: 'secretpassword'}
+    };
+    state = await gomshal.initialize(credentialsConfiguration);
   }
-  // if 2FA is required
-  if (state === GStep.TwoFactorAuthenticationRequired ) {
-    // ask the user for confirmation on the phone and try again
+  // if 2FA confirmation on phone is required
+  if (state === GState.TwoFactorConfirmation ) {
+    // ask the user for confirmation on the phone (simulated by timeout)
     await new Promise(resolve => setTimeout(resolve, 60000));
+    // and try again initialize without any other configuration
     state = await gomshal.initialize();
   }
-  // get last location data
-  locationData = await gomshal.getSharedLocations();
-  gomshal.onSharedLocation((locationData) => {
-    ...
-  })
-  // observables
-  gomshal.newSharedLocations$...
-
-  // or subscribe for changes with observables
+  // catch any other error if you need
+  // if state is LocationData then get last location data
+  const locationData = gomshal.locations;
+  // or set callback when new shared locations data are detected and print it to console
+  gomshal.onLocations((locationData) => {
+    for (let personIndex = 0; personIndex < locationData.entities?.length; personIndex++) {
+      const entity = locationData.entities[personIndex];
+      if (entity.position?.address != null) {
+        console.log(entity.fullName + ': ' + entity.position?.address);
+      }
+    }
+  });
 }
-main();
+startGomshal();
 ```
 
 ## Demo
@@ -91,7 +88,7 @@ main();
 
 ❗️ Dependency instalation: `npm i playwright --save` has tens of megabytes and requires a full browser to run.
 
-### Windows
+### Windows development note
 
 It may be necessary to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` in powershell console (as Administrator).
 
@@ -107,6 +104,6 @@ Breaking changes: `npm version major`
 
 ## Notes
 
-📝 I was inspired by the [node-google-shared-locations](<https://github.com/Vaelek/node-google-shared-locations>) repository. I could no longer simply modify this library without significantly affecting the core library architecture, so I created a new one from the very beginning.
+📝 I was inspired by the [node-google-shared-locations](<https://github.com/Vaelek/node-google-shared-locations>) repository in which I am a contributor. I could no longer simply modify this library without significantly affecting the core library architecture, so I created a new one from the very beginning. Compared to the previous library, this library contains significant expansions, but it is also larger and more resource-intensive.
 
 Created in Slovakia 🇸🇰
