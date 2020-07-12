@@ -70,6 +70,23 @@ async startGomshal() {
 startGomshal();
 ```
 
+🔧 Javascript with CommonJS modules
+
+```javascript
+const { Gomshal } = require('gomshal');
+
+async function gomshalStart() {
+
+  gomshal = new Gomshal();
+  state = await gomshal.initialize({login: 'login', password: 'secret'});
+  console.log('State: ' + state);
+  console.log(gomshal.locations);
+  gomshal.close();
+}
+
+gomshalStart();
+```
+
 ## Demo
 
 💻 There is an beautifull 🌈 [Electron](<https://www.electronjs.org/>) demo inside this monorepo. You can run it using this steps:
