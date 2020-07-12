@@ -1,8 +1,8 @@
 # gomshal
 
 <img align="left" src="assets/logo.png" height="50px">
-Extracts Shared locations from Google Maps 🌍 🔎 👨‍👩‍👧‍👦 to JSON for Node.js.
-There is not an official api for Shared locations by Google, so it requires **full username and password for Google** account.
+Extracts Shared locations from Google Maps 🌍🔎👨‍👩‍👧‍👦 to JSON for Node.js.
+There is not an official api for Shared locations by Google, so it requires _full username and password for Google_ account.
 
 ## Install
 

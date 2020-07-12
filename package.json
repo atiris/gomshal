@@ -4,7 +4,7 @@
   "author": {
     "name": "Jozef Pažin"
   },
-  "description": "Extracts Shared locations from Google Maps to json object (replacement for official missing api for shared location) as node.js library. As this is not an official api, it requires to log in to a google account with a username and password.",
+  "description": "Extracts Shared locations from Google Maps 🌍🔎👨‍👩‍👧‍👦 to JSON for Node.js. There is not an official api for Shared locations by Google, so it requires full username and password for Google account.",
   "homepage": "https://github.com/atiris/gomshal",
   "bugs": {
     "url": "https://github.com/atiris/gomshal/issues"
