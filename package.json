@@ -13,12 +13,12 @@
     "access": "public"
   },
   "private": false,
-  "main": "build/lib/index.js",
-  "typings": "build/lib/index.d.ts",
+  "main": "build/lib/cjs/index.js",
+  "module": "build/lib/esm/index.js",
+  "typings": "build/lib/esm/index.d.ts",
   "files": [
     "build/lib/**/*"
   ],
-  "module": "build/lib/index.js",
   "repository": "https://github.com/atiris/gomshal",
   "license": "MIT",
   "keywords": [
@@ -36,7 +36,9 @@
     "test:unit": "mocha -r ts-node/register ./src/**/*.spec.ts",
     "lint": "eslint .",
     "build": "run-s clean && run-p build:* && run-s copy",
-    "build:lib": "tsc -p tsconfig.lib.json",
+    "build:lib": "run-p buildlib:*",
+    "buildlib:cjs": "tsc -p tsconfig.cjs.json",
+    "buildlib:esm": "tsc -p tsconfig.esm.json",
     "build:demo": "tsc -p tsconfig.demo.json",
     "copy": "run-s copy:*",
     "copy:demo": "copyfiles ./src/app/package.json ./build/demo/app --flat && copyfiles ./src/app/*.html ./build/demo/app --flat && copyfiles ./src/app/*.css ./build/demo/app --flat",
