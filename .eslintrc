@@ -12,7 +12,9 @@
   ],
   "ignorePatterns": [
     "node_modules/*",
-    "build/*"
+    "build/*",
+    "npmtest/*",
+    "temp/*"
   ],
   "rules": {
     "comma-dangle": [

@@ -1,10 +1,12 @@
 # gomshal
 
- Extracts Shared locations from Google Maps 🌍 🔎 👨‍👩‍👧‍👦 to JSON for Node.js. There is not an official api for Shared locations by Google, so it requires **full username and password for Google** account.
+<img align="left" src="assets/logo-space.png" height="50px">
+Extracts Shared locations from Google Maps 🌍🔎👨‍👩‍👧‍👦 to JSON for Node.js.
+There is not an official api for Shared locations by Google, so it requires _full username and password for Google_ account.
 
 ## Install
 
-💾 Download using npm: `npm install gomshal --save`
+💾 npm: `npm install gomshal --save`
 
 ### Npm ignore scripts flag
 
@@ -88,21 +90,28 @@ startGomshal();
 
 ❗️ Dependency instalation: `npm i playwright --save` has tens of megabytes and requires a full browser to run.
 
-### Windows development note
+### Windows development
 
 It may be necessary to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` in powershell console (as Administrator).
 
-## Publishing
-
-### Npm
-
-Build: `tsc -p tsconfig.lib.json` and then run for:
-Initial library publishing `npm publish`
-Bugfix or patch: `npm version patch`
-New features: `npm version minor`
-Breaking changes: `npm version major`
-
 ## Notes
+
+### Publishing to npm
+
+1. Build typescript library: `tsc -p tsconfig.lib.json`
+2. Test before publish
+   - create package: `npm pack`
+   - move created package to npmtest directory: `mv gomshal-1.0.0.tgz npmtest\`
+   - create package json in this directory and set some defaults
+   - try install npm package from file: `npm i gomshal-1.0.0.tgz`
+3. Login to npm: `npm login`
+4. Initial library publishing `npm publish`
+5. Fix
+   - bugfix or patch: `npm version patch`
+   - features: `npm version minor`  
+   - breaking changes: `npm version major`  
+
+### Background
 
 📝 I was inspired by the [node-google-shared-locations](<https://github.com/Vaelek/node-google-shared-locations>) repository in which I am a contributor. I could no longer simply modify this library without significantly affecting the core library architecture, so I created a new one from the very beginning. Compared to the previous library, this library contains significant expansions, but it is also larger and more resource-intensive.
 
