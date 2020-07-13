@@ -20,6 +20,10 @@
   "files": [
     "build/lib/**/*"
   ],
+  "exports": {
+    "import": "./build/lib/esm/index.js",
+    "require": "./build/lib/cjs/index.js"
+  },
   "repository": "https://github.com/atiris/gomshal",
   "license": "MIT",
   "keywords": [
