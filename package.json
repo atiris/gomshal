@@ -13,9 +13,10 @@
     "access": "public"
   },
   "private": false,
-  "main": "build/lib/cjs/index.js",
-  "module": "build/lib/esm/index.js",
-  "typings": "build/lib/esm/index.d.ts",
+  "type": "module",
+  "main": "./build/lib/cjs/index.js",
+  "module": "./build/lib/esm/index.js",
+  "typings": "./build/lib/esm/index.d.ts",
   "files": [
     "build/lib/**/*"
   ],
@@ -37,7 +38,7 @@
     "lint": "eslint .",
     "build": "run-s clean && run-p build:* && run-s copy",
     "build:lib": "run-p buildlib:*",
-    "buildlib:cjs": "tsc -p tsconfig.cjs.json",
+    "buildlib:cjs": "tsc -p tsconfig.cjs.json && copyfiles ./src/cjs/package.json ./build/lib/cjs --flat",
     "buildlib:esm": "tsc -p tsconfig.esm.json",
     "build:demo": "tsc -p tsconfig.demo.json",
     "copy": "run-s copy:*",
@@ -94,7 +95,7 @@
     "npm-run-all": "^4.1.5",
     "nyc": "^15.1.0",
     "open-cli": "^6.0.1",
-    "standard-version": "^8.0.0",
+    "standard-version": "^8.0.1",
     "trash-cli": "^3.0.0",
     "ts-node": "^8.10.2",
     "typescript": "~3.7.5"
