@@ -1,4 +1,4 @@
-import { GPoint, GPosition } from './interfaces';
+import { GPoint, GPosition } from './interfaces.js';
 
 export interface GeoData {
   /**

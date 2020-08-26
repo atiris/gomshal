@@ -1,8 +1,8 @@
-import { BrowserContext, firefox, Page, Response } from 'playwright';
+import { BrowserContext, firefox, Page, Response } from 'playwright-firefox';
 
-import { defaultConfiguration, GConfiguration, GEntity, GLocations, GPoint, GPosition } from './interfaces';
-import { GError, GState } from './enums';
-import { Geopointing } from './geopointing';
+import { defaultConfiguration, GConfiguration, GEntity, GLocations, GPoint, GPosition } from './interfaces.js';
+import { GError, GState } from './enums.js';
+import { Geopointing } from './geopointing.js';
 
 export class Gomshal {
   private browserContext: BrowserContext;

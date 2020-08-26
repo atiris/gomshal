@@ -1,4 +1,4 @@
-import { GError, GState } from './enums';
+import { GError, GState } from './enums.js';
 
 // browser and page configuration
 const GOOGLE_MAPS_URL = 'https://www.google.com/maps/';
