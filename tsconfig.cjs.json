@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./build/lib/cjs",
-    "target": "ES2019",
+    "target": "ES5",
     "module": "CommonJS",
     "moduleResolution": "Node",
     "sourceMap": true,
