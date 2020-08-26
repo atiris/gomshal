@@ -1,6 +1,6 @@
 # gomshal
 
-<img align="left" src="assets/logo-space.png" height="50px">
+<img align="left" src="assets/logo-space.png" height="60px">
 Extracts Shared locations from Google Maps 🌍🔎👨‍👩‍👧‍👦 to JSON for Node.js.
 There is not an official api for Shared locations by Google, so it requires _full username and password for Google_ account.
 
@@ -115,12 +115,17 @@ It may be necessary to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` i
 
 ### Publishing to npm
 
-1. Build typescript library: `tsc -p tsconfig.lib.json`
+1. Build typescript library: `npm run build`
 2. Test before publish
    - create package: `npm pack`
-   - move created package to npmtest directory: `mv gomshal-1.0.0.tgz npmtest\`
-   - create package json in this directory and set some defaults
-   - try install npm package from file: `npm i gomshal-1.0.0.tgz`
+   - move created package to npmtest directory: `mv gomshal-*.tgz npmtest\`
+   - create package json in this directory and set some defaults for test:
+     - `"type": "commonjs",` for commonjs test and
+     - `"type": "module",` for es6 module test
+   - install npm package from file: `npm i gomshal-1.0.0.tgz --save`
+   - go to npmtest dir `cd npmtest` and run test for desired type:
+     - `node index.cjs.js` for commonjs test and
+     - `node index.esm.js` for es6 module test
 3. Login to npm: `npm login`
 4. Initial library publishing `npm publish`
 5. Fix
