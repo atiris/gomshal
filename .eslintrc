@@ -12,6 +12,7 @@
   ],
   "ignorePatterns": [
     "node_modules/*",
+    "src/app/*",
     "build/*",
     "dist/*",
     "npmtest/*",
