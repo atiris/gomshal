@@ -3,8 +3,7 @@
 [![License](https://img.shields.io/npm/l/@angular/cli.svg)](/LICENSE) 
 
 <img align="left" src="assets/logo-space.png" height="60px">
-Extracts Shared locations from Google Maps 🌍🔎👨‍👩‍👧‍👦 to JSON for Node.js.
-There is not an official api for Shared locations by Google, so it requires _full username and password for Google_ account.
+Extracts Shared locations from Google Maps 🌍🔎👨‍👩‍👧‍👦 to JSON for Node.js. Since there is no official API for Shared locations by Google, this library requires to set *full username and password* for Google account directly as input parameter.
 
 ## Install
 
@@ -78,10 +77,8 @@ startGomshal();
 const { Gomshal } = require('gomshal');
 
 async function gomshalStart() {
-
   gomshal = new Gomshal();
-  state = await gomshal.initialize({login: 'login', password: 'secret'});
-  console.log('State: ' + state);
+  state = await gomshal.initialize({login: 'google@gmail.com', password: 'secretpassword'});
   console.log(gomshal.locations);
   gomshal.close();
 }
