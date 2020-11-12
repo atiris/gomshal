@@ -3,8 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./build/lib/esm",
-    "target": "ES2020",
-    "module": "ES2015",
+    "target": "ES2015",
+    "module": "ES6",
     "moduleResolution": "Node",
     "sourceMap": true,
     "forceConsistentCasingInFileNames": true,

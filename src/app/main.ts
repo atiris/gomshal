@@ -8,8 +8,8 @@ let win: BrowserWindow;
 
 function createWindow(): void {
   win = new BrowserWindow({
-    width: 900,
-    height: 600,
+    width: 950,
+    height: 650,
     webPreferences: {
       nodeIntegration: true,
     },
@@ -76,12 +76,10 @@ function locationsToLog(data: GLocations): void {
   win.webContents.send('rendererAction', { type: 'newLocations', text: log.trim() });
 
   for (let personIndex = 0; personIndex < data.entities?.length; personIndex++) {
-    log = '// ';
     const entity = data.entities[personIndex];
-    if (entity.position?.address != null) {
-      log += ' ' + entity.fullName + ': ' + entity.position?.address;
-    }
-    win.webContents.send('rendererAction', { type: 'data', text: log.trim() });
+    const personData = '//  ' + (entity.fullName ? entity.fullName : 'unknown name')
+      + ': ' + (entity.position?.address ? entity.position?.address : 'unknown location');
+    win.webContents.send('rendererAction', { type: 'data', text: personData.trim() });
   }
 
 }

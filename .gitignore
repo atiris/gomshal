@@ -10,7 +10,6 @@
 .history/
 
 # Testing
-npmtest/
 credentials.json
 
 # Temporary

@@ -89,7 +89,12 @@ document.getElementById('gomshal-configuration-empty')
 
 document.getElementById('gomshal-configuration-login-password')
   .addEventListener('click', () => {
-    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = '{"name":"","password":""}';
+    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = '{"login":"","password":""}';
+  });
+
+document.getElementById('gomshal-configuration-test')
+  .addEventListener('click', () => {
+    (document.getElementById('gomshal-configuration-json') as HTMLInputElement).value = '{"login":"","password":"","headless":false,"showDevTools":true}';
   });
 
 document.getElementById('gomshal-configuration-visible-devtools')

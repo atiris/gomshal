@@ -1,3 +1,3 @@
-export * from './gomshal';
-export * from './enums';
-export * from './interfaces';
+export * from './gomshal.js';
+export * from './enums.js';
+export * from './interfaces.js';

@@ -1,8 +1,8 @@
-import { BrowserContext, firefox, Page, Response } from 'playwright';
+import { BrowserContext, firefox, Page, Response } from 'playwright-firefox';
 
-import { defaultConfiguration, GConfiguration, GEntity, GLocations, GPoint, GPosition } from './interfaces';
-import { GError, GState } from './enums';
-import { Geopointing } from './geopointing';
+import { defaultConfiguration, GConfiguration, GEntity, GLocations, GPoint, GPosition } from './interfaces.js';
+import { GError, GState } from './enums.js';
+import { Geopointing } from './geopointing.js';
 
 export class Gomshal {
   private browserContext: BrowserContext;
@@ -221,11 +221,35 @@ export class Gomshal {
 
   private async loadGoogleMapsPage(): Promise<boolean> {
     try {
+      this.page.on('response', async (res) => await this.subscribeForMapsPageResponse(res));
       await this.page.goto(this._configuration.googleMapsUrl, { waitUntil: 'domcontentloaded' });
       return true;
     } catch {
       this.updateState(GState.Close, GError.WrongGoogleMapsSite);
       return false;
+    }
+  }
+
+  // private escapeRegExp(regexString: string) {
+  //   return regexString.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+  // }
+
+  private async subscribeForMapsPageResponse(response: Response): Promise<void> {
+    const url = response.url();
+    if (url === this._configuration.googleMapsUrl) {
+      this.page.removeListener('response', async (res) => await this.subscribeForMapsPageResponse(res));
+
+      const responseBody = await response.body();
+      const responseBodyString = responseBody.toString();
+      const regExpOwnerLoginName = new RegExp(this._configuration.parserRegExpOwnerLoginName);
+      const responseMatch = responseBodyString.match(regExpOwnerLoginName);
+
+      if (responseMatch.length > 0 && !this._configuration.login) {
+        this._configuration.login = responseMatch[1];
+      }
+      if (responseMatch.length > 0 && !this.ownerFullName) {
+        this.ownerFullName = responseMatch[2];
+      }
     }
   }
 
@@ -242,7 +266,6 @@ export class Gomshal {
   private async processResponseData(response: Response): Promise<boolean> {
     try {
       const url = response.url();
-
       const urlLocations = url.indexOf(this._configuration.locationSharingUrlSubstring) >= 0;
       if (urlLocations) {
         this.processSharedLocationBody(response);
@@ -263,7 +286,6 @@ export class Gomshal {
 
   private async processSharedLocationBody(response: Response): Promise<GLocations> {
     try {
-
       const body = await response.body();
       const bodyString = body.toString(undefined, this._configuration.locationSharingResponseSkipStartFix)
         .replace(/[\n\r]+/g, '')
