@@ -1,41 +1,39 @@
+// global tsconfig as union version for library and demo
 {
   "compilerOptions": {
-    "target": "es2017",
-    "outDir": "build/main",
-    "rootDir": "src",
-    "moduleResolution": "node",
-    "module": "commonjs",
-    "declaration": true,
-    "inlineSourceMap": true,
+    "baseUrl": ".",
+    "outDir": "./build",
+    "target": "ES2018",
+    "sourceMap": true,
+    "moduleResolution": "Node",
+    "module": "CommonJS",
+    "declaration": true, // generate .d.ts files (declaration files) which contain types of the code
+    "skipLibCheck": true, // because of errors in node libs
     "esModuleInterop": true,
-
-    // "strict": true,
-    // Strict Type-Checking Options
-    // "noImplicitAny": true,
-    // "strictNullChecks": true,
-    // "strictFunctionTypes": true,
-    // "strictPropertyInitialization": true,
-    // "noImplicitThis": true,
-    // "alwaysStrict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-
-    // Debugging Options
     "traceResolution": false,
     "listEmittedFiles": false,
     "listFiles": false,
     "pretty": true,
-
-    //* Experimental
-    // "experimentalDecorators": true,
-    // "emitDecoratorMetadata": true,
-
-    "lib": ["es2017"],
-    "typeRoots": ["node_modules/@types", "src/types"]
+    "lib": ["ES2018", "DOM"],
+    "typeRoots": [
+      "node_modules/@types",
+      "src/lib/types",
+    ],
+    "paths": {
+      "*": [
+        "node_modules/*",
+        "src/lib/types/*",
+      ],/*
+      "gomshal": [
+        "src/lib/index", // for reference to gomshal in demo
+      ] */
+    },
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules/**"],
-  "compileOnSave": false
+  "include": [
+    "./src/**/*.ts",
+  ],
 }

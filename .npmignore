@@ -1,0 +1,16 @@
+/.nyc_output
+/.userdata
+/.vscode
+/assets
+/build/demo
+/coverage
+/node_modules
+/src
+/npmtest
+/temp
+
+.editorconfig
+.eslintrc
+.gitignore
+.markdownlint.json
+tsconfig*.json
