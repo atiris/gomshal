@@ -12,9 +12,9 @@ const GOOGLE_MAPS_LOGIN_BUTTON_SELECTOR = 'a[href*="ServiceLogin"]';
 
 const GOOGLE_ACCOUNT_USE_ANOTHER_ACCOUNT_BUTTON_SELECTOR = 'li:nth-child(2) div[role="link"]';
 const GOOGLE_ACCOUNT_EMAIL_INPUT_SELECTOR = 'input[type="email"]';
-const GOOGLE_ACCOUNT_EMAIL_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
+const GOOGLE_ACCOUNT_EMAIL_NEXT_BUTTON_SELECTOR = 'div#identifierNext button';
 const GOOGLE_ACCOUNT_PASSWORD_INPUT_SELECTOR = 'input[type="password"]';
-const GOOGLE_ACCOUNT_PASSWORD_NEXT_BUTTON_SELECTOR = 'div[role=button][id]';
+const GOOGLE_ACCOUNT_PASSWORD_NEXT_BUTTON_SELECTOR = 'div#passwordNext button';
 const GOOGLE_ACCOUNT_TWO_FACTOR_WAITING_URL_SUBSTRING = 'accounts.google.com/signin/v2/challenge';
 
 const DETECTION_TIMEOUT = 15 * 1000;
@@ -42,6 +42,7 @@ const PARSER_LOCATION_DATA_LATITUDE = '1.2';
 const PARSER_LOCATION_DATA_TIMESTAMP = '2';
 const PARSER_LOCATION_DATA_ADDRESS = '4';
 const PARSER_LOCATION_DATA_COUNTRY = '6';
+const PARSER_REGEXP_OWNER_LOGIN_NAME = ',"([^@"]{2,50}@[^"]{4,20})","([^"]+)",';
 const PARSER_OWNER_DATA = '9';
 const PARSER_OWNER_LOCATION_TIMESTAMP = '1.2';
 const PARSER_OWNER_LOCATION_LONGITUDE = '1.1.1';
@@ -250,15 +251,15 @@ export interface GConfiguration {
    */
   ownerFullName?: string;
   /**
-   * Account owner short name is not automatically detected, please set it here
+   * Account owner short name is not automatically detected, please set it here.
    */
   ownerShortName?: string;
   /**
-   * URL to Google maps.
+   * URL to Google maps. Including protocol, must end with a slash.
    */
   googleMapsUrl?: string;
   /**
-   * Substring to identify if google maps is loaded
+   * Substring to identify if google maps is loaded.
    */
   googleMapsLoadedUrlSubstring?: string;
   /**
@@ -411,6 +412,10 @@ export interface GConfiguration {
    */
   parserPathLocationDataCountry?: string;
   /**
+   * Regular expression to extract owner full name from google maps page response.
+   */
+  parserRegExpOwnerLoginName?: string;
+  /**
    * Path to owner data JSON (for logged in google account user).
    */
   parserPathOwnerData?: string;
@@ -475,6 +480,7 @@ export const defaultConfiguration: GConfiguration = {
   parserPathLocationDataTimestamp: PARSER_LOCATION_DATA_TIMESTAMP,
   parserPathLocationDataAddress: PARSER_LOCATION_DATA_ADDRESS,
   parserPathLocationDataCountry: PARSER_LOCATION_DATA_COUNTRY,
+  parserRegExpOwnerLoginName: PARSER_REGEXP_OWNER_LOGIN_NAME,
   parserPathOwnerData: PARSER_OWNER_DATA,
   parserPathOwnerLocationTimestamp: PARSER_OWNER_LOCATION_TIMESTAMP,
   parserPathOwnerLocationLongitude: PARSER_OWNER_LOCATION_LONGITUDE,
